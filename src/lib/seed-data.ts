@@ -35,8 +35,22 @@ export const SEED_WORKOUT_OCT_01: WorkoutEntry = {
   ],
 };
 
-export const SEED_WORKOUT_OCT_02: WorkoutEntry = {
-  id: 'seed-wo-2',
+// The user's own manual log on Oct 1 (from his phone): afternoon pull-ups & core session
+export const USER_WORKOUT_OCT_01_MANUAL: WorkoutEntry = {
+  id: 'user-wo-oct1-pullups',
+  name: 'PULL-UPS & CORE',
+  type: 'strength',
+  time: '13:46',
+  durationMin: 40,
+  calories: 0,
+  exercises: [
+    { name: 'Pull-ups', sets: 4, reps: 6 },
+    { name: 'Chin-ups', sets: 3, reps: 8 },
+    { name: 'Hanging Leg Raises', sets: 4, reps: 12 },
+  ],
+};
+
+export const SEED_WORKOUT_OCT_02: WorkoutEntry = {  id: 'seed-wo-2',
   name: 'Calisthenics',
   type: 'calisthenics',
   time: '18:48',
@@ -91,7 +105,7 @@ export function getInitialSeedData(): AppState {
       },
     ],
     walks: [],
-    workouts: [SEED_WORKOUT_OCT_01],
+    workouts: [USER_WORKOUT_OCT_01_MANUAL, SEED_WORKOUT_OCT_01],
     points: 0,
   };
   const d1Points = calculateDayPoints(day1, DEFAULT_PROFILE, 0);

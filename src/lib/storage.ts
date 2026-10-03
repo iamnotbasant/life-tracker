@@ -72,7 +72,10 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
     }
   }
 
-  // Backfill honest seed workouts for Oct 1 & Oct 2 if workouts are empty and seed meals are present
+  // Backfill the honest seed workout for Oct 1 if it is missing.
+  // (The old version only added it when Oct 1 had NO workouts at all, so phones
+  // where the user had already logged their own manual "PULL-UPS & CORE" session
+  // never received the Fitness-Tracker workout. Both sessions are real.)
   const day1 = days['2026-10-01'];
   if (day1) {
     const workouts = day1.workouts || [];
@@ -81,10 +84,12 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       mealIds.includes('seed-meal-1') &&
       mealIds.includes('seed-meal-2') &&
       mealIds.includes('seed-meal-3');
-    if (workouts.length === 0 && hasSeedMeals) {
+    const hasFitnessTrackerWorkout = workouts.some((w) => w.id === 'seed-wo-1');
+    if (!hasFitnessTrackerWorkout && hasSeedMeals) {
       const updatedDay1: DayData = {
         ...day1,
         workouts: [
+          ...workouts,
           {
             ...SEED_WORKOUT_OCT_01,
             exercises: SEED_WORKOUT_OCT_01.exercises ? [...SEED_WORKOUT_OCT_01.exercises] : undefined,
