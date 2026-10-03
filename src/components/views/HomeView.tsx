@@ -115,23 +115,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const isToday = activeDate === '2026-10-03' || activeDate === new Date().toISOString().split('T')[0];
   const dateLabel = isToday ? `Today, ${formatDateLabel(activeDate)}` : formatDateLabel(activeDate);
 
-  // 7-day strip calculation for steps card
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const [y, m, d] = activeDate.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    date.setDate(date.getDate() - (6 - i));
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const dateKey = `${yyyy}-${mm}-${dd}`;
-    const dayData = days[dateKey];
-    const daySteps = dayData?.steps || 0;
-    const dayLetter = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()];
-    const isSelected = dateKey === activeDate;
-    return { dateKey, daySteps, dayLetter, isSelected };
-  });
-  const maxSteps7d = Math.max(stepsGoal, ...last7Days.map(d => d.daySteps), 1);
-
   // 7-day points for glowing Points card sparkline
   const points7Days = Array.from({ length: 7 }, (_, i) => {
     const [y, m, d] = activeDate.split('-').map(Number);
@@ -397,43 +380,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {day.stepsNote}
           </div>
         )}
-
-        {/* Compact 7-day mini strip */}
-        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
-          <div className="flex items-center justify-between text-xs mb-2 gap-2">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-              <span className="text-xs font-semibold text-zinc-300">Last 7 Days</span>
-              <span className="text-[11px] text-zinc-500">· avg {Math.round(last7Days.reduce((s, d) => s + d.daySteps, 0) / 7).toLocaleString()}</span>
-            </div>
-            <span className="text-xs font-semibold text-zinc-400 shrink-0 ml-2">{stepsBurned} kcal</span>
-          </div>
-          <div className="flex items-end justify-between gap-1.5 bg-[#0e1411] p-2 rounded-xl border border-white/[0.04]">
-            {last7Days.map((d) => (
-              <div key={d.dateKey} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full h-8 bg-[#18201C] rounded flex items-end p-0.5 justify-center overflow-hidden">
-                  <div
-                    className={cn(
-                      "w-full rounded-xs transition-all duration-300",
-                      d.isSelected ? "bg-[#22C55E]" : "bg-zinc-700"
-                    )}
-                    style={{
-                      height: `${Math.min(Math.max(Math.round((d.daySteps / maxSteps7d) * 100), 8), 100)}%`,
-                    }}
-                    title={`${d.dateKey}: ${d.daySteps.toLocaleString()} steps`}
-                  />
-                </div>
-                <span
-                  className={cn(
-                    "text-[10px]",
-                    d.isSelected ? "text-[#22C55E] font-bold" : "text-zinc-500"
-                  )}
-                >
-                  {d.dayLetter}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
