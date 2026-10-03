@@ -72,6 +72,25 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
     }
   }
 
+  // Remove the user's manual "PULL-UPS & CORE" workout from Oct 1 (user asked to
+  // remove it 2026-10-03; only the Fitness-Tracker workout stays).
+  const day1manual = days['2026-10-01'];
+  if (day1manual && (day1manual.workouts || []).some((w) => w.id === 'user-wo-oct1-pullups')) {
+    const updatedDay1m: DayData = {
+      ...day1manual,
+      workouts: (day1manual.workouts || []).filter((w) => w.id !== 'user-wo-oct1-pullups'),
+    };
+    try {
+      const bd = calculateDayPoints(updatedDay1m, state.profile);
+      updatedDay1m.points = bd.total;
+      updatedDay1m.pointsBreakdown = bd;
+    } catch {
+      /* keep existing points on failure */
+    }
+    days['2026-10-01'] = updatedDay1m;
+    changed = true;
+  }
+
   // Backfill the honest seed workout for Oct 1 if it is missing.
   // (The old version only added it when Oct 1 had NO workouts at all, so phones
   // where the user had already logged their own manual "PULL-UPS & CORE" session
@@ -194,11 +213,11 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       mealsChanged = true;
     }
     const NEW_OCT2_MEALS = [
-      { id: 'seed-meal-6', time: '--', mealType: 'breakfast', description: '1 sooji laddu', calories: 158, protein: 1.8 },
-      { id: 'seed-meal-7', time: '--', mealType: 'lunch', description: '3 parathe + 1 katori dahi', calories: 590, protein: 15 },
-      { id: 'seed-meal-9', time: '--', mealType: 'snack', description: 'namkeen packet (~20g)', calories: 102, protein: 0.9 },
-      { id: 'seed-meal-10', time: '--', mealType: 'snack', description: 'Priyagold CNC biscuits (1 packet)', calories: 195, protein: 2.7 },
-      { id: 'seed-meal-8', time: '--', mealType: 'dinner', description: '2 roti + thodi dal', calories: 270, protein: 9 },
+      { id: 'seed-meal-11', time: '--', mealType: 'breakfast', description: '1 sooji laddu', calories: 158, protein: 1.8 },
+      { id: 'seed-meal-12', time: '--', mealType: 'lunch', description: '3 parathe + 1 katori dahi', calories: 590, protein: 15 },
+      { id: 'seed-meal-14', time: '--', mealType: 'snack', description: 'namkeen packet (~20g)', calories: 102, protein: 0.9 },
+      { id: 'seed-meal-15', time: '--', mealType: 'snack', description: 'Priyagold CNC biscuits (1 packet)', calories: 195, protein: 2.7 },
+      { id: 'seed-meal-13', time: '--', mealType: 'dinner', description: '2 roti + thodi dal', calories: 270, protein: 9 },
     ] as const;
     for (const nm of NEW_OCT2_MEALS) {
       if (!meals.some((m) => m.id === nm.id)) {
@@ -263,6 +282,59 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       const bd = calculateDayPoints(day, state.profile);
       day.points = bd.total;
       day.pointsBreakdown = bd;
+    } catch {
+      /* keep existing points on failure */
+    }
+  }
+
+  // Oct 3 dummy-data cleanup (user-confirmed 2026-10-03): the v1 fabricated demo
+  // seeded Oct 3 with fake sleep/steps/walks. The user logged NOTHING on Oct 3
+  // except weight (50.05, added above), so strip the fabricated values.
+  // Genuine user entries (non-fake ids, real logs) are left untouched.
+  const d3 = days['2026-10-03'];
+  if (d3) {
+    let d3Changed = false;
+    if ((d3.walks || []).length > 0) {
+      d3.walks = [];
+      d3Changed = true;
+    }
+    if ((d3.steps || 0) !== 0) {
+      d3.steps = 0;
+      d3Changed = true;
+    }
+    if (d3.stepsNote) {
+      delete (d3 as { stepsNote?: string }).stepsNote;
+      d3Changed = true;
+    }
+    // Only the exact fabricated v1 sleep pattern (23:30 -> 07:30)
+    if (d3.sleep && d3.sleep.sleepStart === '23:30' && d3.sleep.sleepEnd === '07:30') {
+      delete (d3 as { sleep?: unknown }).sleep;
+      d3Changed = true;
+    }
+    if (d3Changed) {
+      try {
+        const bd = calculateDayPoints(d3, state.profile);
+        d3.points = bd.total;
+        d3.pointsBreakdown = bd;
+      } catch {
+        /* keep existing points on failure */
+      }
+      days['2026-10-03'] = d3;
+      changed = true;
+    }
+  }
+
+  // Final pass: recompute every day's points with the current 0-10 system.
+  // (The scale changed from the old negative-friendly system; this is a no-op
+  // once points already match.)
+  for (const day of Object.values(days)) {
+    try {
+      const bd = calculateDayPoints(day, state.profile);
+      if (day.points !== bd.total) {
+        day.points = bd.total;
+        day.pointsBreakdown = bd;
+        changed = true;
+      }
     } catch {
       /* keep existing points on failure */
     }

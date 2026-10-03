@@ -35,21 +35,6 @@ export const SEED_WORKOUT_OCT_01: WorkoutEntry = {
   ],
 };
 
-// The user's own manual log on Oct 1 (from his phone): afternoon pull-ups & core session
-export const USER_WORKOUT_OCT_01_MANUAL: WorkoutEntry = {
-  id: 'user-wo-oct1-pullups',
-  name: 'PULL-UPS & CORE',
-  type: 'strength',
-  time: '13:46',
-  durationMin: 40,
-  calories: 0,
-  exercises: [
-    { name: 'Pull-ups', sets: 4, reps: 6 },
-    { name: 'Chin-ups', sets: 3, reps: 8 },
-    { name: 'Hanging Leg Raises', sets: 4, reps: 12 },
-  ],
-};
-
 export const SEED_WORKOUT_OCT_02: WorkoutEntry = {  id: 'seed-wo-2',
   name: 'Calisthenics',
   type: 'calisthenics',
@@ -105,7 +90,7 @@ export function getInitialSeedData(): AppState {
       },
     ],
     walks: [],
-    workouts: [USER_WORKOUT_OCT_01_MANUAL, SEED_WORKOUT_OCT_01],
+    workouts: [SEED_WORKOUT_OCT_01],
     points: 0,
   };
   const d1Points = calculateDayPoints(day1, DEFAULT_PROFILE, 0);
@@ -125,7 +110,7 @@ export function getInitialSeedData(): AppState {
     },
     meals: [
       {
-        id: 'seed-meal-6',
+        id: 'seed-meal-11',
         time: '--',
         mealType: 'breakfast',
         description: '1 sooji laddu',
@@ -149,7 +134,7 @@ export function getInitialSeedData(): AppState {
         protein: 33.5,
       },
       {
-        id: 'seed-meal-7',
+        id: 'seed-meal-12',
         time: '--',
         mealType: 'lunch',
         description: '3 parathe + 1 katori dahi',
@@ -157,7 +142,7 @@ export function getInitialSeedData(): AppState {
         protein: 15,
       },
       {
-        id: 'seed-meal-9',
+        id: 'seed-meal-14',
         time: '--',
         mealType: 'snack',
         description: 'namkeen packet (~20g)',
@@ -165,7 +150,7 @@ export function getInitialSeedData(): AppState {
         protein: 0.9,
       },
       {
-        id: 'seed-meal-10',
+        id: 'seed-meal-15',
         time: '--',
         mealType: 'snack',
         description: 'Priyagold CNC biscuits (1 packet)',
@@ -173,7 +158,7 @@ export function getInitialSeedData(): AppState {
         protein: 2.7,
       },
       {
-        id: 'seed-meal-8',
+        id: 'seed-meal-13',
         time: '--',
         mealType: 'dinner',
         description: '2 roti + thodi dal',

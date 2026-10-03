@@ -1,128 +1,92 @@
 import { DayData, PointsBreakdown, UserProfile } from './types';
 
+// Daily points system: 0-10 scale (no negatives).
+//   Calories  0-3  (3 = gain zone 2400-2700, 2 = close, 1 = logged but low)
+//   Protein   0-2  (2 = >=85g goal, 1 = 60-84g)
+//   Steps     0-2  (2 = >=10k, 1 = 5k-9,999)
+//   Workout   0-1  (1 = logged)
+//   Sleep     0-1  (1 = 7-9h)
+//   Weight    0-1  (1 = logged)
+// Max total = 10.
 export function calculateDayPoints(day: DayData, profile: UserProfile, streak: number = 0): PointsBreakdown {
   const notes: string[] = [];
 
-  // 1. Calories points
+  // 1. Calories (max 3)
   const totalKcal = day.meals.reduce((sum, m) => sum + (m.calories || 0), 0);
   let caloriesPts = 0;
-  if (totalKcal === 0) {
-    caloriesPts = 0;
-    notes.push('Calories: Not logged (0 pts)');
-  } else if (totalKcal >= 2400 && totalKcal <= 2650) {
-    caloriesPts = 10;
-    notes.push(`Calories: ${totalKcal} kcal (+10 pts, perfect gain zone)`);
-  } else if (totalKcal >= 2200 && totalKcal < 2400) {
-    caloriesPts = 5;
-    notes.push(`Calories: ${totalKcal} kcal (+5 pts, maintain zone)`);
-  } else if (totalKcal >= 2000 && totalKcal < 2200) {
-    caloriesPts = 0;
-    notes.push(`Calories: ${totalKcal} kcal (0 pts, near maintain)`);
-  } else if (totalKcal >= 1 && totalKcal < 2000) {
-    caloriesPts = -8;
-    notes.push(`Calories: ${totalKcal} kcal (-8 pts, under-eating)`);
+  if (totalKcal >= 2400 && totalKcal <= 2700) {
+    caloriesPts = 3;
+    notes.push(`Calories: ${totalKcal} kcal (+3 pts, gain zone)`);
+  } else if (
+    (totalKcal >= 2200 && totalKcal < 2400) ||
+    (totalKcal > 2700 && totalKcal <= 2900)
+  ) {
+    caloriesPts = 2;
+    notes.push(`Calories: ${totalKcal} kcal (+2 pts, close to zone)`);
+  } else if (totalKcal >= 1) {
+    caloriesPts = 1;
+    notes.push(`Calories: ${totalKcal} kcal (+1 pt, logged)`);
   } else {
-    // 2900+ or 2651-2899
-    if (totalKcal >= 2900) {
-      caloriesPts = -5;
-      notes.push(`Calories: ${totalKcal} kcal (-5 pts, excessive surplus)`);
-    } else {
-      caloriesPts = 5;
-      notes.push(`Calories: ${totalKcal} kcal (+5 pts, upper gain surplus)`);
-    }
+    notes.push('Calories: Not logged (0 pts)');
   }
 
-  // 2. Protein points
+  // 2. Protein (max 2)
   const totalProtein = day.meals.reduce((sum, m) => sum + (m.protein || 0), 0);
   let proteinPts = 0;
-  if (totalProtein === 0) {
-    proteinPts = 0;
-    notes.push('Protein: Not logged (0 pts)');
-  } else if (totalProtein >= 85) {
-    proteinPts = 10;
-    notes.push(`Protein: ${totalProtein}g (+10 pts, goal hit!)`);
-  } else if (totalProtein >= 65) {
-    proteinPts = 5;
-    notes.push(`Protein: ${totalProtein}g (+5 pts, close to goal)`);
+  if (totalProtein >= 85) {
+    proteinPts = 2;
+    notes.push(`Protein: ${totalProtein}g (+2 pts, goal hit!)`);
+  } else if (totalProtein >= 60) {
+    proteinPts = 1;
+    notes.push(`Protein: ${totalProtein}g (+1 pt, on the way)`);
+  } else if (totalProtein > 0) {
+    notes.push(`Protein: ${totalProtein}g (0 pts, under 60g)`);
   } else {
-    proteinPts = -5;
-    notes.push(`Protein: ${totalProtein}g (-5 pts, under minimum)`);
+    notes.push('Protein: Not logged (0 pts)');
   }
 
-  // 3. Steps points
+  // 3. Steps (max 2)
   const steps = day.steps || 0;
   let stepsPts = 0;
-  if (steps === 0) {
-    stepsPts = 0;
-    notes.push('Steps: Not logged (0 pts)');
-  } else if (steps >= 10000) {
-    stepsPts = 10;
-    notes.push(`Steps: ${steps.toLocaleString()} (+10 pts, 10k target hit)`);
-  } else if (steps >= 7500) {
-    stepsPts = 5;
-    notes.push(`Steps: ${steps.toLocaleString()} (+5 pts, active day)`);
-  } else if (steps >= 5000) {
+  if (steps >= 10000) {
     stepsPts = 2;
-    notes.push(`Steps: ${steps.toLocaleString()} (+2 pts, moderate movement)`);
+    notes.push(`Steps: ${steps.toLocaleString()} (+2 pts, 10k hit)`);
+  } else if (steps >= 5000) {
+    stepsPts = 1;
+    notes.push(`Steps: ${steps.toLocaleString()} (+1 pt, active)`);
+  } else if (steps > 0) {
+    notes.push(`Steps: ${steps.toLocaleString()} (0 pts, low)`);
   } else {
-    stepsPts = -5;
-    notes.push(`Steps: ${steps.toLocaleString()} (-5 pts, low movement)`);
+    notes.push('Steps: Not logged (0 pts)');
   }
 
-  // 4. Workout points
-  const totalWorkoutMin = (day.workouts || []).reduce((sum, w) => sum + (w.durationMin || 0), 0);
-  let workoutPts = 0;
-  if (totalWorkoutMin >= 15 || (day.workouts && day.workouts.length > 0)) {
-    workoutPts = 10;
-    notes.push(`Workout: Logged (${totalWorkoutMin}m) (+10 pts)`);
-  } else {
-    workoutPts = 0;
-    notes.push('Workout: None logged (0 pts)');
-  }
+  // 4. Workout (max 1)
+  const workoutCount = (day.workouts || []).length;
+  const workoutPts = workoutCount > 0 ? 1 : 0;
+  notes.push(
+    workoutCount > 0 ? `Workout: Logged (+1 pt)` : 'Workout: None logged (0 pts)'
+  );
 
-  // 5. Sleep points (if recorded)
+  // 5. Sleep (max 1)
   let sleepPts = 0;
-  if (day.sleep && (day.sleep.sleepHours !== undefined || day.sleep.sleepStart)) {
-    const hours = day.sleep.sleepHours ?? 0;
-    let durationPts = 0;
-    if (hours >= 7 && hours <= 8.5) {
-      durationPts = 10;
-    } else if ((hours >= 6 && hours < 7) || (hours > 8.5 && hours <= 9.5)) {
-      durationPts = 5;
-    } else if (hours > 0) {
-      durationPts = -5;
-    }
-
-    let bedtimePts = 0;
-    if (day.sleep.sleepStart) {
-      const [h, m] = day.sleep.sleepStart.split(':').map(Number);
-      // Asleep before or at 23:30 (e.g. 21:00 - 23:30)
-      if (h >= 20 && (h < 23 || (h === 23 && m <= 30))) {
-        bedtimePts = 5;
-      } else if (h >= 0 && (h > 0 || m > 30) && h < 6) {
-        bedtimePts = -5; // After 00:30
-      }
-    }
-
-    sleepPts = durationPts + bedtimePts;
-    notes.push(`Sleep: ${hours}h (+${sleepPts} pts)`);
+  if (day.sleep && day.sleep.sleepHours !== undefined && day.sleep.sleepHours >= 7 && day.sleep.sleepHours <= 9) {
+    sleepPts = 1;
+    notes.push(`Sleep: ${day.sleep.sleepHours}h (+1 pt)`);
+  } else if (day.sleep && (day.sleep.sleepHours !== undefined || day.sleep.sleepStart)) {
+    notes.push(`Sleep: ${day.sleep.sleepHours ?? '?'}h (0 pts, aim 7-9h)`);
+  } else {
+    notes.push('Sleep: Not logged (0 pts)');
   }
 
-  // 6. Weight logged
-  let weightPts = 0;
-  if (day.weight && day.weight > 0) {
-    weightPts = 5;
-    notes.push(`Weight: ${day.weight} kg logged (+5 pts)`);
+  // 6. Weight (max 1)
+  const weightPts = day.weight && day.weight > 0 ? 1 : 0;
+  if (weightPts) {
+    notes.push(`Weight: ${day.weight} kg logged (+1 pt)`);
+  } else {
+    notes.push('Weight: Not logged (0 pts)');
   }
 
-  // 7. Streak bonus
-  let streakPts = 0;
-  if (streak >= 3) {
-    streakPts = 5;
-    notes.push(`Streak: ${streak} days (+5 pts bonus)`);
-  }
-
-  const total = caloriesPts + proteinPts + stepsPts + workoutPts + sleepPts + weightPts + streakPts;
+  const total = caloriesPts + proteinPts + stepsPts + workoutPts + sleepPts + weightPts;
 
   return {
     caloriesPts,
@@ -131,7 +95,6 @@ export function calculateDayPoints(day: DayData, profile: UserProfile, streak: n
     workoutPts,
     sleepPts,
     weightPts,
-    streakPts,
     total,
     notes,
   };

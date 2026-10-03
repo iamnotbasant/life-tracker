@@ -60,7 +60,6 @@ export interface PointsBreakdown {
   workoutPts: number;
   sleepPts: number;
   weightPts: number;
-  streakPts: number;
   total: number;
   notes: string[];
 }
