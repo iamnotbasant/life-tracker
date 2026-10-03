@@ -53,18 +53,13 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       (w) => !isFakeSeedId(w.id) && w.id !== 'seed-walk-1' && w.title !== 'Campus Stroll'
     );
     const workouts = (day.workouts || []).filter((w) => !isFakeSeedId(w.id));
-    const hadFakeWeight = date === '2026-10-01' && day.weight !== undefined;
 
     if (
       meals.length !== (day.meals || []).length ||
       walks.length !== (day.walks || []).length ||
-      workouts.length !== (day.workouts || []).length ||
-      hadFakeWeight
+      workouts.length !== (day.workouts || []).length
     ) {
       const cleaned: DayData = { ...day, meals, walks, workouts };
-      if (hadFakeWeight) {
-        delete cleaned.weight;
-      }
       try {
         const bd = calculateDayPoints(cleaned, state.profile);
         cleaned.points = bd.total;
@@ -178,13 +173,52 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       }
     }
   }
-  if (!weightHistory.some((w) => w.date === '2026-10-02')) {
-    weightHistory = [
-      ...weightHistory,
-      { id: 'w-1', date: '2026-10-02', weightKg: 48.9, note: 'Measured' },
-    ];
+  // Weight corrections (user-confirmed): 48.9 kg was logged on Oct 1 (not Oct 2);
+  // today's (Oct 3) weight is 50.05 kg.
+  const seedWeightEntry = weightHistory.find(
+    (w) => w.id === 'w-1' && w.note === 'Measured' && w.date === '2026-10-02'
+  );
+  if (seedWeightEntry) {
+    seedWeightEntry.date = '2026-10-01';
     weightHistory.sort((a, b) => a.date.localeCompare(b.date));
     changed = true;
+  }
+  const oct1 = days['2026-10-01'];
+  if (oct1 && oct1.weight === undefined) {
+    days['2026-10-01'] = { ...oct1, weight: 48.9 };
+    changed = true;
+  }
+  const hasOct3Weight =
+    weightHistory.some((w) => w.date === '2026-10-03') ||
+    (days['2026-10-03'] && days['2026-10-03'].weight !== undefined);
+  if (!hasOct3Weight) {
+    weightHistory = [
+      ...weightHistory,
+      { id: `w-seed-1003`, date: '2026-10-03', weightKg: 50.05, note: 'Measured' },
+    ];
+    weightHistory.sort((a, b) => a.date.localeCompare(b.date));
+    const d3 = days['2026-10-03'] || {
+      date: '2026-10-03',
+      steps: 0,
+      meals: [],
+      walks: [],
+      workouts: [],
+      points: 0,
+    };
+    days['2026-10-03'] = { ...d3, weight: 50.05 };
+    changed = true;
+  }
+  // Recompute points for the two weight-corrected days
+  for (const d of ['2026-10-01', '2026-10-03']) {
+    const day = days[d];
+    if (!day) continue;
+    try {
+      const bd = calculateDayPoints(day, state.profile);
+      day.points = bd.total;
+      day.pointsBreakdown = bd;
+    } catch {
+      /* keep existing points on failure */
+    }
   }
 
   return { state: changed ? { ...state, days, weightHistory } : state, changed };

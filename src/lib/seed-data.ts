@@ -58,6 +58,7 @@ export function getInitialSeedData(): AppState {
   const day1: DayData = {
     date: '2026-10-01',
     steps: 1697,
+    weight: 48.9,
     sleep: {
       sleepStart: '01:40',
       sleepEnd: '08:41',
@@ -135,19 +136,25 @@ export function getInitialSeedData(): AppState {
   day2.pointsBreakdown = d2Points;
   days['2026-10-02'] = day2;
 
-  // 2026-10-03 (today) — starts empty; the user logs their own data
-  days['2026-10-03'] = {
+  // 2026-10-03 (today) — the user's real weight log; other data he logs himself
+  const day3: DayData = {
     date: '2026-10-03',
     steps: 0,
+    weight: 50.05,
     meals: [],
     walks: [],
     workouts: [],
     points: 0,
   };
+  const d3Points = calculateDayPoints(day3, DEFAULT_PROFILE, 0);
+  day3.points = d3Points.total;
+  day3.pointsBreakdown = d3Points;
+  days['2026-10-03'] = day3;
 
   // Only the user's real measured entry — no fabricated history
   const weightHistory: WeightEntry[] = [
-    { id: 'w-1', date: '2026-10-02', weightKg: 48.9, note: 'Measured' },
+    { id: 'w-1', date: '2026-10-01', weightKg: 48.9, note: 'Measured' },
+    { id: 'w-2', date: '2026-10-03', weightKg: 50.05, note: 'Measured' },
   ];
 
   return {
