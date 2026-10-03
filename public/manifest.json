@@ -1,0 +1,21 @@
+{
+  "name": "Life Tracker",
+  "short_name": "LifeTracker",
+  "description": "Daily points, energy, calisthenics, meals, and habit tracker for Basant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070A11",
+  "theme_color": "#0B0F19",
+  "icons": [
+    {
+      "src": "/assets/app-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
