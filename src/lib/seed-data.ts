@@ -109,14 +109,7 @@ export function getInitialSeedData(): AppState {
       sleepHours: 4.5,
     },
     meals: [
-      {
-        id: 'seed-meal-11',
-        time: '--',
-        mealType: 'breakfast',
-        description: '1 sooji laddu',
-        calories: 158,
-        protein: 1.8,
-      },
+
       {
         id: 'seed-meal-4',
         time: '10:10',
@@ -132,6 +125,41 @@ export function getInitialSeedData(): AppState {
         description: '5 roti + 2 katori dal',
         calories: 840,
         protein: 33.5,
+      },
+
+
+
+      {
+        id: 'seed-meal-13',
+        time: '--',
+        mealType: 'dinner',
+        description: '2 roti + thodi dal',
+        calories: 270,
+        protein: 9,
+      },
+    ],
+    walks: [],
+    workouts: [SEED_WORKOUT_OCT_02],
+    points: 0,
+  };
+  const d2Points = calculateDayPoints(day2, DEFAULT_PROFILE, 0);
+  day2.points = d2Points.total;
+  day2.pointsBreakdown = d2Points;
+  days['2026-10-02'] = day2;
+
+  // 2026-10-03 (today) — the user's real weight log; other data he logs himself
+  const day3: DayData = {
+    date: '2026-10-03',
+    steps: 0,
+    weight: 50.05,
+    meals: [
+      {
+        id: 'seed-meal-11',
+        time: '--',
+        mealType: 'breakfast',
+        description: '1 sooji laddu',
+        calories: 158,
+        protein: 1.8,
       },
       {
         id: 'seed-meal-12',
@@ -157,30 +185,7 @@ export function getInitialSeedData(): AppState {
         calories: 195,
         protein: 2.7,
       },
-      {
-        id: 'seed-meal-13',
-        time: '--',
-        mealType: 'dinner',
-        description: '2 roti + thodi dal',
-        calories: 270,
-        protein: 9,
-      },
     ],
-    walks: [],
-    workouts: [SEED_WORKOUT_OCT_02],
-    points: 0,
-  };
-  const d2Points = calculateDayPoints(day2, DEFAULT_PROFILE, 0);
-  day2.points = d2Points.total;
-  day2.pointsBreakdown = d2Points;
-  days['2026-10-02'] = day2;
-
-  // 2026-10-03 (today) — the user's real weight log; other data he logs himself
-  const day3: DayData = {
-    date: '2026-10-03',
-    steps: 0,
-    weight: 50.05,
-    meals: [],
     walks: [],
     workouts: [],
     points: 0,

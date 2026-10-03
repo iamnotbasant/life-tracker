@@ -239,7 +239,30 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
     }
   }
 
-  // Weight corrections (user-confirmed): 48.9 kg was logged on Oct 1 (not Oct 2);
+  // Oct 2 -> Oct 3 meal move (user clarified 2026-10-03): the "new items" from his
+  // earlier message (1 laddu, 3 parathe+dahi, namkeen, biscuits) were TODAY's
+  // (Oct 3) food, not Oct 2's. Move them; Oct 2 keeps the dinner correction.
+  const MOVE_TO_OCT3 = ['seed-meal-11', 'seed-meal-12', 'seed-meal-14', 'seed-meal-15'];
+  const d2move = days['2026-10-02'];
+  const d3move = days['2026-10-03'];
+  if (d2move) {
+    const toMove = (d2move.meals || []).filter((m) => MOVE_TO_OCT3.includes(m.id));
+    if (toMove.length > 0) {
+      days['2026-10-02'] = {
+        ...d2move,
+        meals: (d2move.meals || []).filter((m) => !MOVE_TO_OCT3.includes(m.id)),
+      };
+      const d3m = d3move || {
+        date: '2026-10-03', steps: 0, meals: [], walks: [], workouts: [], points: 0,
+      };
+      const existingIds = new Set((d3m.meals || []).map((m) => m.id));
+      const newMeals = toMove.filter((m) => !existingIds.has(m.id));
+      if (newMeals.length > 0) {
+        days['2026-10-03'] = { ...d3m, meals: [...(d3m.meals || []), ...newMeals] };
+      }
+      changed = true;
+    }
+  }
   // today's (Oct 3) weight is 50.05 kg.
   const seedWeightEntry = weightHistory.find(
     (w) => w.id === 'w-1' && w.note === 'Measured' && w.date === '2026-10-02'
