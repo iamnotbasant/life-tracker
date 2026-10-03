@@ -310,42 +310,11 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
     }
   }
 
-  // Oct 3 dummy-data cleanup (user-confirmed 2026-10-03): the v1 fabricated demo
-  // seeded Oct 3 with fake sleep/steps/walks. The user logged NOTHING on Oct 3
-  // except weight (50.05, added above), so strip the fabricated values.
-  // Genuine user entries (non-fake ids, real logs) are left untouched.
-  const d3 = days['2026-10-03'];
-  if (d3) {
-    let d3Changed = false;
-    if ((d3.walks || []).length > 0) {
-      d3.walks = [];
-      d3Changed = true;
-    }
-    if ((d3.steps || 0) !== 0) {
-      d3.steps = 0;
-      d3Changed = true;
-    }
-    if (d3.stepsNote) {
-      delete (d3 as { stepsNote?: string }).stepsNote;
-      d3Changed = true;
-    }
-    // Only the exact fabricated v1 sleep pattern (23:30 -> 07:30)
-    if (d3.sleep && d3.sleep.sleepStart === '23:30' && d3.sleep.sleepEnd === '07:30') {
-      delete (d3 as { sleep?: unknown }).sleep;
-      d3Changed = true;
-    }
-    if (d3Changed) {
-      try {
-        const bd = calculateDayPoints(d3, state.profile);
-        d3.points = bd.total;
-        d3.pointsBreakdown = bd;
-      } catch {
-        /* keep existing points on failure */
-      }
-      days['2026-10-03'] = d3;
-      changed = true;
-    }
-  }
+  // NOTE (2026-10-03): the Oct 3 v1-dummy cleanup that used to live here was
+  // removed. It unconditionally zeroed Oct 3 steps / cleared walks / deleted
+  // sleep on EVERY app load, and its founding assumption ("user logged nothing
+  // on Oct 3") is now false — the user logs real steps there. The fabricated
+  // v1 data was cleaned long ago, so the block had become a data-destroyer.
 
   // Final pass: recompute every day's points with the current 0-10 system.
   // (The scale changed from the old negative-friendly system; this is a no-op
