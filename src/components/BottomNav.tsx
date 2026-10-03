@@ -6,7 +6,7 @@ import {
   Footprints,
   Dumbbell,
   UtensilsCrossed,
-  CalendarDays,
+  Moon,
 } from 'lucide-react';
 import { TabType } from '../lib/types';
 import { cn } from '../lib/utils';
@@ -26,7 +26,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { tab: 'steps', label: 'Steps', icon: Footprints },
     { tab: 'workout', label: 'Workouts', icon: Dumbbell },
     { tab: 'meals', label: 'Meals', icon: UtensilsCrossed },
-    { tab: 'history', label: 'Habits', icon: CalendarDays },
+    { tab: 'sleep', label: 'Sleep', icon: Moon },
   ];
 
   return (

@@ -190,7 +190,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
     setIsWorkoutAiEstimating(true);
     try {
       const dur = Number(woDur) || undefined;
-      const est = await estimateWorkoutCalories(query, dur, key);
+      const est = await estimateWorkoutCalories(query, dur, key, profile.weightKg);
       setWoKcal(String(est.calories));
       setWorkoutAiNotice({
         type: 'success',

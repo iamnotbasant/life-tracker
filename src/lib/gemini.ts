@@ -69,9 +69,10 @@ export async function estimateMealNutrition(
 }
 
 export async function estimateWorkoutCalories(
-  name: string,
+  workoutDescription: string,
   durationMin: number | undefined,
-  apiKey: string
+  apiKey: string,
+  bodyWeightKg?: number
 ): Promise<{ calories: number }> {
   const key = apiKey.trim();
   if (!key) {
@@ -79,7 +80,11 @@ export async function estimateWorkoutCalories(
   }
 
   const durInfo = durationMin && durationMin > 0 ? ` lasting ${durationMin} minutes` : '';
-  const prompt = `Estimate calories burned for this workout: "${name}"${durInfo} for an adult male (~49kg). Reply ONLY JSON: {"calories": number}`;
+  const weightInfo =
+    bodyWeightKg && bodyWeightKg > 0
+      ? ` The person weighs ${bodyWeightKg} kg — factor this into your calculation.`
+      : '';
+  const prompt = `You are a sports-science analyst. Analyze this workout and estimate calories burned: "${workoutDescription}"${durInfo}.${weightInfo} First break down the exercises (exercise type, sets, reps, any added weight), judge the intensity, then compute total calories burned using standard MET-based exercise physiology. Be realistic and conservative — never overestimate. Reply ONLY JSON: {"calories": number}`;
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`;
 

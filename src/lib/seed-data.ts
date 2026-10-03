@@ -25,7 +25,8 @@ export const SEED_WORKOUT_OCT_01: WorkoutEntry = {
   type: 'calisthenics',
   time: '18:21',
   durationMin: 5,
-  calories: 0,
+  // MET-based estimate: 4.5 MET x 48.9 kg x 5/60 h ~ 18 kcal (source recorded no calories)
+  calories: 18,
   exercises: [
     { name: 'Standard Push-ups', sets: 3, reps: 1 },
     { name: 'Incline Push-ups', sets: 3, reps: 1 },
@@ -40,7 +41,8 @@ export const SEED_WORKOUT_OCT_02: WorkoutEntry = {
   type: 'calisthenics',
   time: '18:48',
   durationMin: 8,
-  calories: 0,
+  // MET-based estimate: 4.5 MET x 48.9 kg x 8/60 h ~ 29 kcal (source recorded no calories)
+  calories: 29,
   exercises: [
     { name: 'Pull-ups', sets: 3, reps: 1 },
     { name: 'Chin-ups', sets: 3, reps: 1 },

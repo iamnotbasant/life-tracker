@@ -129,28 +129,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
   });
   const maxPts = Math.max(25, ...points7Days.map(p => Math.abs(p.pts)));
 
-  // Weight card calculations
+  // Weight card calculations — dashboard card shows weight ONLY for the selected day
+  // (no carry-forward). Day-wise history on the Weight page already lists logged days only.
   const sortedWeightHistory = [...state.weightHistory].sort((a, b) => a.date.localeCompare(b.date));
-  const latestWeightEntry = sortedWeightHistory.length > 0 ? sortedWeightHistory[sortedWeightHistory.length - 1] : null;
-  const prevWeightEntry = sortedWeightHistory.length > 1 ? sortedWeightHistory[sortedWeightHistory.length - 2] : null;
+  const dayWeightEntry =
+    sortedWeightHistory.find((w) => w.date === activeDate) ??
+    (day.weight !== undefined
+      ? { id: `day-${activeDate}`, date: activeDate, weightKg: day.weight, note: '' }
+      : null);
+  const dayDisplayWeight = dayWeightEntry ? `${dayWeightEntry.weightKg}` : '—';
 
-  const currentWeightVal = latestWeightEntry?.weightKg ?? profile.weightKg;
-  const displayWeight = currentWeightVal !== undefined ? `${currentWeightVal}` : '—';
-
-  let weightCaption = 'No weight logged yet';
-  if (latestWeightEntry && prevWeightEntry) {
-    const diff = +(latestWeightEntry.weightKg - prevWeightEntry.weightKg).toFixed(1);
-    const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
-    const d1 = new Date(prevWeightEntry.date).getTime();
-    const d2 = new Date(latestWeightEntry.date).getTime();
-    const daysDiff = Math.abs(d2 - d1) / (1000 * 3600 * 24);
-    if (daysDiff <= 7) {
-      weightCaption = `${diffStr} kg this week`;
+  let dayWeightCaption = 'Not logged yet — tap to log';
+  if (dayWeightEntry) {
+    const prevEntry = [...sortedWeightHistory].filter((w) => w.date < dayWeightEntry.date).pop();
+    if (prevEntry) {
+      const diff = +(dayWeightEntry.weightKg - prevEntry.weightKg).toFixed(1);
+      dayWeightCaption = `${diff > 0 ? '+' : ''}${diff} kg vs previous`;
     } else {
-      weightCaption = `${diffStr} kg vs previous`;
+      dayWeightCaption = `logged ${formatDateLabel(dayWeightEntry.date)}`;
     }
-  } else if (latestWeightEntry) {
-    weightCaption = `last logged ${formatDateLabel(latestWeightEntry.date)}`;
   }
 
   const currentDayWeight = day.weight ?? state.weightHistory.find(w => w.date === activeDate)?.weightKg;
@@ -535,10 +532,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <Scale className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
-          {displayWeight} <span className="text-lg font-normal text-zinc-500">kg</span>
+          {dayDisplayWeight} <span className="text-lg font-normal text-zinc-500">kg</span>
         </div>
         <div className="text-[11px] text-zinc-500 font-medium">
-          {weightCaption}
+          {dayWeightCaption}
         </div>
       </div>
 

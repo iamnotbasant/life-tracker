@@ -16,7 +16,6 @@ import { MealsView } from '../components/views/MealsView';
 import { CaloriesView } from '../components/views/CaloriesView';
 import { WeightView } from '../components/views/WeightView';
 import { SleepView } from '../components/views/SleepView';
-import { HistoryView } from '../components/views/HistoryView';
 import { SettingsView } from '../components/views/SettingsView';
 
 export default function App() {
@@ -309,9 +308,12 @@ export default function App() {
           />
         )}
 
-        {!detailView && currentTab === 'history' && (
-          <HistoryView
+        {!detailView && currentTab === 'sleep' && (
+          <SleepView
             state={state}
+            onBack={() => setCurrentTab('home')}
+            onOpenQuickLog={() => handleOpenQuickLog('sleep')}
+            onOpenSleepModal={() => handleOpenQuickLog('sleep')}
             onDateChange={handleDateChange}
           />
         )}
