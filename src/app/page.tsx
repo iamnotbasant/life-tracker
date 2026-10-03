@@ -5,7 +5,6 @@ import { AppState, TabType, MealEntry, WalkSession, WorkoutEntry, UserProfile } 
 import { loadAppState, saveAppState } from '../lib/storage';
 import { calculateDayPoints } from '../lib/points';
 import { calculateStreak } from '../lib/utils';
-import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { PointsInfoModal } from '../components/PointsInfoModal';
@@ -46,9 +45,9 @@ export default function App() {
 
   if (!state) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-zinc-400">
+      <div className="min-h-screen bg-[#0A0F0D] flex items-center justify-center text-zinc-400">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Loading Life Tracker...
           </span>
@@ -127,7 +126,6 @@ export default function App() {
   const handleAddWalk = (walk: WalkSession) => {
     updateDayData(activeDate, d => {
       const newWalks = [...d.walks, walk];
-      // Also add walk steps to day's total steps if walk steps are higher
       const newSteps = Math.max(d.steps || 0, (d.steps || 0) + (walk.steps || 0));
       return {
         ...d,
@@ -204,20 +202,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans">
-      {/* Top Sticky Header */}
-      <Header
-        profile={profile}
-        activeDate={activeDate}
-        onDateChange={handleDateChange}
-        streak={streak}
-        todayPoints={currentDay.points || 0}
-        onOpenPointsInfo={() => setIsPointsInfoOpen(true)}
-        onSelectTab={setCurrentTab}
-      />
-
+    <div className="min-h-screen bg-[#0A0F0D] text-zinc-100 flex flex-col font-sans">
       {/* Main View Container */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 pt-4 sm:pt-6">
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 sm:pt-6">
         {currentTab === 'home' && (
           <HomeView
             state={state}
@@ -225,6 +212,7 @@ export default function App() {
             onOpenQuickLog={handleOpenQuickLog}
             onOpenPointsInfo={() => setIsPointsInfoOpen(true)}
             streak={streak}
+            onDateChange={handleDateChange}
           />
         )}
 
@@ -242,6 +230,7 @@ export default function App() {
             onAddWalk={handleAddWalk}
             onDeleteWalk={handleDeleteWalk}
             onOpenQuickLog={() => handleOpenQuickLog('walk')}
+            onSelectTab={setCurrentTab}
           />
         )}
 
@@ -264,7 +253,10 @@ export default function App() {
         )}
 
         {currentTab === 'calories' && (
-          <CaloriesView state={state} />
+          <CaloriesView
+            state={state}
+            onSelectTab={setCurrentTab}
+          />
         )}
 
         {currentTab === 'weight' && (
@@ -272,6 +264,7 @@ export default function App() {
             state={state}
             onLogWeight={handleLogWeight}
             onOpenQuickLog={() => handleOpenQuickLog('weight')}
+            onSelectTab={setCurrentTab}
           />
         )}
 
@@ -295,7 +288,6 @@ export default function App() {
       <BottomNav
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
-        onOpenQuickLog={() => handleOpenQuickLog('steps')}
       />
 
       {/* Modals */}

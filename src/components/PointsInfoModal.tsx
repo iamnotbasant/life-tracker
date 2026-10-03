@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X, Flame, CheckCircle, ShieldCheck } from 'lucide-react';
-import { DayData, PointsBreakdown, UserProfile } from '../lib/types';
+import { X, Flame, CheckCircle } from 'lucide-react';
+import { DayData, UserProfile } from '../lib/types';
 
 interface PointsInfoModalProps {
   isOpen: boolean;
@@ -15,14 +15,12 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
   isOpen,
   onClose,
   day,
-  profile,
 }) => {
   if (!isOpen) return null;
 
   const rules = [
     {
       category: 'Nutrition & Calories',
-      accent: '#FACC15',
       items: [
         { label: '2,400 – 2,650 kcal (Gain Target)', pts: '+10 pts', good: true },
         { label: '2,200 – 2,399 kcal (Maintain)', pts: '+5 pts', good: true },
@@ -33,7 +31,6 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
     },
     {
       category: 'Protein Target',
-      accent: '#FACC15',
       items: [
         { label: '85g+ daily protein', pts: '+10 pts', good: true },
         { label: '65 – 84g daily protein', pts: '+5 pts', good: true },
@@ -42,7 +39,6 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
     },
     {
       category: 'Daily Steps',
-      accent: '#FACC15',
       items: [
         { label: '10,000+ steps hit', pts: '+10 pts', good: true },
         { label: '7,500 – 9,999 steps', pts: '+5 pts', good: true },
@@ -52,7 +48,6 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
     },
     {
       category: 'Workout & Calisthenics',
-      accent: '#F95738',
       items: [
         { label: 'Workout 15+ min logged', pts: '+10 pts', good: true },
         { label: 'No workout logged', pts: '0 pts', neutral: true },
@@ -60,7 +55,6 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
     },
     {
       category: 'Sleep & Discipline',
-      accent: '#FACC15',
       items: [
         { label: '7.0 – 8.5 hours optimal sleep', pts: '+10 pts', good: true },
         { label: 'Asleep by 23:30 goal', pts: '+5 pts', good: true },
@@ -70,7 +64,6 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
     },
     {
       category: 'Consistency & Milestones',
-      accent: '#F95738',
       items: [
         { label: 'Body weight logged today', pts: '+5 pts', good: true },
         { label: '3+ Day streak active bonus', pts: '+5 pts', good: true },
@@ -80,11 +73,11 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-      <div className="relative w-full max-w-lg bg-[#121214] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-[#121815] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-zinc-900/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-[#18201C]/60">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#FACC15]/10 text-[#FACC15]">
+            <div className="p-2 rounded-xl bg-[#22C55E]/10 text-[#22C55E]">
               <Flame className="w-5 h-5" />
             </div>
             <div>
@@ -101,14 +94,13 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5">
-          {/* Minimal Points Score summary banner (NO hero image) */}
-          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/[0.06] flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/15 border border-[#FACC15]/20 flex items-center justify-center text-[#FACC15] shrink-0">
-              <Flame className="w-6 h-6" />
+        <div className="p-6 overflow-y-auto space-y-4">
+          <div className="p-4 rounded-xl bg-[#18201C] border border-white/[0.06] flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#22C55E]/15 border border-[#22C55E]/20 flex items-center justify-center text-[#22C55E] shrink-0">
+              <Flame className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#FACC15] uppercase tracking-wider">
+              <div className="text-xs font-bold text-[#22C55E] uppercase tracking-wider">
                 Discipline Engine
               </div>
               <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
@@ -119,19 +111,19 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
 
           {/* Today's Breakdown if available */}
           {day && day.pointsBreakdown && (
-            <div className="p-4 rounded-2xl bg-zinc-900/40 border border-white/[0.06]">
+            <div className="p-4 rounded-xl bg-[#18201C]/70 border border-white/[0.06]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                   Today's Score Breakdown
                 </span>
-                <span className={`text-sm font-black ${day.points >= 0 ? 'text-[#FACC15]' : 'text-rose-400'}`}>
+                <span className={`text-sm font-black ${day.points >= 0 ? 'text-[#22C55E]' : 'text-rose-400'}`}>
                   {day.points >= 0 ? `+${day.points}` : day.points} PTS
                 </span>
               </div>
               <div className="space-y-1">
                 {day.pointsBreakdown.notes.map((note, i) => (
                   <div key={i} className="text-xs text-zinc-300 flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
                     <span>{note}</span>
                   </div>
                 ))}
@@ -140,23 +132,21 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
           )}
 
           {/* Rules List */}
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             {rules.map((rule, idx) => (
-              <div key={idx} className="bg-zinc-900/40 border border-white/[0.05] rounded-2xl p-3.5">
-                <div
-                  className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5 text-zinc-200"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: rule.accent }} />
+              <div key={idx} className="bg-[#18201C]/60 border border-white/[0.04] rounded-xl p-3.5">
+                <div className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5 text-zinc-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
                   {rule.category}
                 </div>
                 <div className="space-y-1.5">
                   {rule.items.map((it, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-black/40">
+                    <div key={i} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[#0A0F0D]">
                       <span className="text-zinc-300">{it.label}</span>
                       <span
                         className={`font-bold px-2 py-0.5 rounded-md ${
                           it.good
-                            ? 'bg-emerald-500/15 text-emerald-400'
+                            ? 'bg-[#22C55E]/15 text-[#22C55E]'
                             : it.bad
                             ? 'bg-rose-500/15 text-rose-400'
                             : 'bg-zinc-800 text-zinc-400'
@@ -173,7 +163,7 @@ export const PointsInfoModal: React.FC<PointsInfoModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/[0.06] bg-zinc-900/50 flex justify-end">
+        <div className="p-4 border-t border-white/[0.06] bg-[#18201C]/60 flex justify-end">
           <button
             onClick={onClose}
             className="w-full py-2.5 px-4 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white font-semibold text-sm transition-colors"

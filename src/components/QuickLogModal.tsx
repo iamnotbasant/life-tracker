@@ -137,9 +137,9 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-      <div className="relative w-full max-w-md bg-[#121214] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-md bg-[#121815] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-zinc-900/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-[#18201C]/60">
           <h3 className="text-base font-bold text-white tracking-tight">Quick Log</h3>
           <button
             onClick={onClose}
@@ -150,7 +150,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex p-2 bg-black border-b border-white/[0.06] gap-1 overflow-x-auto no-scrollbar">
+        <div className="flex p-2 bg-[#0A0F0D] border-b border-white/[0.06] gap-1 overflow-x-auto no-scrollbar">
           {[
             { id: 'steps', label: 'Steps', icon: Footprints },
             { id: 'meal', label: 'Meal', icon: Utensils },
@@ -166,7 +166,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                 onClick={() => setActiveTab(t.id as any)}
                 className={`flex-1 min-w-[65px] flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition-all ${
                   isSel
-                    ? 'bg-[#FACC15] text-black shadow-sm'
+                    ? 'bg-[#22C55E] text-black shadow-sm'
                     : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
@@ -191,7 +191,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={stepInput}
                   onChange={e => setStepInput(Number(e.target.value))}
                   placeholder="e.g. 10000"
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-2xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#FACC15]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
@@ -202,7 +202,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     key={amt}
                     type="button"
                     onClick={() => setStepInput(prev => (prev || 0) + amt)}
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.06] text-xs font-semibold text-zinc-300 active:scale-95 transition-all"
+                    className="flex-1 py-1.5 px-2 rounded-xl bg-[#18201C] hover:bg-zinc-800 border border-white/[0.06] text-xs font-semibold text-zinc-300 active:scale-95 transition-all"
                   >
                     +{amt}
                   </button>
@@ -210,9 +210,9 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
               </div>
 
               {/* Calorie estimate preview */}
-              <div className="p-3 rounded-2xl bg-zinc-900/60 border border-white/[0.04] text-xs text-zinc-400 flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-[#18201C]/60 border border-white/[0.04] text-xs text-zinc-400 flex items-center justify-between">
                 <span>Burn estimate (@ {profile.weightKg} kg):</span>
-                <span className="font-bold text-[#FACC15]">
+                <span className="font-bold text-[#22C55E]">
                   ~{estimateStepsCalories(stepInput, profile.stepCalorieFactor)} kcal
                 </span>
               </div>
@@ -226,13 +226,13 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={stepsNote}
                   onChange={e => setStepsNote(e.target.value)}
                   placeholder="e.g. Evening walk in college campus"
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FACC15]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-black font-bold text-sm transition-all"
+                className="w-full py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-sm transition-all"
               >
                 Save Steps
               </button>
@@ -250,8 +250,8 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     onClick={() => setMealType(t)}
                     className={`py-2 text-xs font-bold capitalize rounded-xl border transition-all ${
                       mealType === t
-                        ? 'bg-[#FACC15] border-[#FACC15] text-black'
-                        : 'bg-zinc-900 border-white/[0.06] text-zinc-400 hover:text-white'
+                        ? 'bg-[#22C55E] border-[#22C55E] text-black'
+                        : 'bg-[#18201C] border-white/[0.06] text-zinc-400 hover:text-white'
                     }`}
                   >
                     {t}
@@ -269,7 +269,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={mealDesc}
                   onChange={e => setMealDesc(e.target.value)}
                   placeholder="e.g. 4 roti + dal + paneer bhurji"
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FACC15]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
@@ -283,7 +283,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     required
                     value={mealKcal}
                     onChange={e => setMealKcal(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#FACC15]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
                 <div>
@@ -296,7 +296,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     required
                     value={mealProtein}
                     onChange={e => setMealProtein(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#FACC15]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
               </div>
@@ -309,13 +309,13 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   type="text"
                   value={mealTime}
                   onChange={e => setMealTime(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-black font-bold text-sm transition-all"
+                className="w-full py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-sm transition-all"
               >
                 Log Meal
               </button>
@@ -334,7 +334,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={walkTitle}
                   onChange={e => setWalkTitle(e.target.value)}
                   placeholder="e.g. Evening Campus Loop"
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
@@ -347,7 +347,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     type="number"
                     value={walkSteps}
                     onChange={e => setWalkSteps(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
                 <div>
@@ -359,7 +359,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     step="0.01"
                     value={walkDist}
                     onChange={e => setWalkDist(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
               </div>
@@ -373,7 +373,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     type="number"
                     value={walkDur}
                     onChange={e => setWalkDur(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
                 <div>
@@ -384,14 +384,14 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     type="number"
                     value={walkBpm}
                     onChange={e => setWalkBpm(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#F95738] hover:brightness-110 text-white font-bold text-sm transition-all"
+                className="w-full py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-sm transition-all"
               >
                 Save Walk Session
               </button>
@@ -410,7 +410,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={woName}
                   onChange={e => setWoName(e.target.value)}
                   placeholder="e.g. Calisthenics Dips & Pull-ups"
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
@@ -423,7 +423,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     type="number"
                     value={woDur}
                     onChange={e => setWoDur(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
                 <div>
@@ -434,7 +434,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     type="number"
                     value={woKcal}
                     onChange={e => setWoKcal(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
               </div>
@@ -447,13 +447,13 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   rows={3}
                   value={woExercises}
                   onChange={e => setWoExercises(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#F95738]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#F95738] hover:brightness-110 text-white font-bold text-sm transition-all"
+                className="w-full py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-sm transition-all"
               >
                 Log Workout (+10 Pts)
               </button>
@@ -474,7 +474,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     required
                     value={weightInput}
                     onChange={e => setWeightInput(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-2xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#FACC15]"
+                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#22C55E]"
                   />
                   <span className="text-xl font-bold text-zinc-500">kg</span>
                 </div>
@@ -489,13 +489,13 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={weightNote}
                   onChange={e => setWeightNote(e.target.value)}
                   placeholder="e.g. Morning empty stomach"
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FACC15]"
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-black font-bold text-sm transition-all"
+                className="w-full py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-sm transition-all"
               >
                 Save Weight (+5 Pts)
               </button>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Dumbbell, Plus, Trash2, Zap, SlidersHorizontal } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, SlidersHorizontal, Scale } from 'lucide-react';
 import { AppState, WorkoutEntry } from '../../lib/types';
 import { formatDateLabel } from '../../lib/utils';
 
@@ -18,7 +18,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
   onDeleteWorkout,
   onOpenQuickLog,
 }) => {
-  const { activeDate, days } = state;
+  const { profile, activeDate, days } = state;
   const currentDay = days[activeDate] || {
     date: activeDate,
     steps: 0,
@@ -29,272 +29,236 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
   };
 
   const workouts = currentDay.workouts || [];
-
-  // Stat computations
   const todayMinutes = workouts.reduce((sum, w) => sum + (w.durationMin || 0), 0);
   const todayCalories = workouts.reduce((sum, w) => sum + (w.calories || 0), 0);
-
-  let totalWorkoutsCount = 0;
-  for (const d of Object.values(days)) {
-    if (d.workouts) {
-      totalWorkoutsCount += d.workouts.length;
-    }
-  }
 
   // Quick preset logger for Calisthenics
   const handleLogPreset = (name: string, type: any, dur: number, cal: number, exercises: string[]) => {
     const newWo: WorkoutEntry = {
-      id: `wo-preset-${Date.now()}`,
+      id: `wo-${Date.now()}`,
       name,
       type,
       durationMin: dur,
       calories: cal,
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
       exercises: exercises.map(ex => ({ name: ex })),
-      notes: 'Logged via quick calisthenics routine',
+      notes: 'Calisthenics routine logged',
     };
     onAddWorkout(newWo);
   };
 
   return (
-    <div className="space-y-6 pb-28 max-w-xl mx-auto">
-      {/* Header exactly like Ref-01 */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 pb-28 max-w-md mx-auto">
+      {/* ─────────────────────────────────────────────────────────────
+          SCREEN HEADER: EXACTLY LIKE v3-01
+          Title top-left "Workouts" + 2 circular icon buttons top-right
+         ───────────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pt-2 pb-2">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Workouts</h2>
-          <p className="text-xs text-zinc-400">{formatDateLabel(activeDate)}</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Workouts</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">{formatDateLabel(activeDate)}</p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => onOpenQuickLog('workout')}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 text-zinc-300 hover:text-white border border-white/[0.08] transition-colors"
-            title="Filter or Log"
+            className="w-10 h-10 rounded-full bg-[#121815] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center hover:border-[#22C55E] active:scale-95 transition-all shadow-md"
+            title="Filter Workouts"
+            aria-label="Filter Workouts"
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>
           <button
             onClick={() => onOpenQuickLog('workout')}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800 text-zinc-300 hover:text-white border border-white/[0.08] transition-colors"
+            className="w-10 h-10 rounded-full bg-[#121815] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center hover:border-[#22C55E] active:scale-95 transition-all shadow-md"
             title="Add Workout"
+            aria-label="Add Workout"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 text-[#22C55E]" />
           </button>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          1. STAT CARDS EXACTLY MATCHING REF-01 (life-tracker-v2-01-workout-cards.jpg)
-          Dark, few large cards per screen, big numerals, tiny captions
+          CARD 1: Full-width card (Matching v3-01 "Weight" top card)
          ───────────────────────────────────────────────────────────── */}
-      <div className="space-y-3">
-        {/* Large Card 1: Today's Workouts / Weight-like wide card */}
-        <div className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5 flex items-center justify-between">
-          <div>
-            <div className="text-base font-bold text-white">Workouts</div>
-            <div className="text-xs text-zinc-500 mt-0.5">
-              {workouts.length > 0 ? `Logged ${workouts.length} session today` : 'Logged just now'}
-            </div>
+      <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-white">Weight</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">Logged 1 min ago</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-3xl font-black text-white tracking-tight">
+            {profile.weightKg} <span className="text-sm font-medium text-zinc-500">kg</span>
           </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-4xl font-black text-white">{workouts.length}</span>
-            <span className="text-xs font-semibold text-zinc-500 uppercase">today</span>
+          <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          ROW 2: 2-column grid of two cards (Matching v3-01 middle row)
+         ───────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Left Card: Sessions count */}
+        <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[140px]">
+          <div className="flex items-start justify-between">
+            <span className="text-4xl font-black text-white tracking-tight">
+              {workouts.length}
+            </span>
+            <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-white">Number</div>
+            <div className="text-[10px] text-zinc-500 mt-0.5">Logged just now</div>
           </div>
         </div>
 
-        {/* 2 Medium Side-by-Side Cards (matching Ref-01 middle row) */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card 2: Training Minutes */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5 flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-black text-white">{todayMinutes}</span>
-              <span className="text-xs font-semibold text-zinc-500">min</span>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-white">Duration</div>
-              <div className="text-[10px] text-zinc-500 mt-0.5">Active training time</div>
-            </div>
+        {/* Right Card: Duration */}
+        <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[140px]">
+          <div className="flex items-start justify-between">
+            <span className="text-4xl font-black text-white tracking-tight">
+              {todayMinutes} <span className="text-sm font-medium text-zinc-500">min</span>
+            </span>
+            <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
           </div>
-
-          {/* Card 3: Calories Burned */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5 flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-black text-[#F95738]">{todayCalories}</span>
-              <span className="text-xs font-semibold text-zinc-500">kcal</span>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-white">Energy Burn</div>
-              <div className="text-[10px] text-zinc-500 mt-0.5">Metabolic demand</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Wide Card 4: Points Rule Indicator (matching Ref-01 cardio 365 card) */}
-        <div className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5 flex items-center justify-between">
           <div>
-            <div className="text-base font-bold text-white">Daily Discipline Rule</div>
-            <div className="text-xs text-zinc-500 mt-0.5">15+ min session unlocks points</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-black text-[#FACC15]">+10</span>
-            <span className="text-xs font-bold text-zinc-400">PTS</span>
+            <div className="text-xs font-semibold text-white">Measurement</div>
+            <div className="text-[10px] text-zinc-500 mt-0.5">Logged 1 min ago</div>
           </div>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. QUICK PRESET CALISTHENICS SHORTCUTS
+          CARD 3: Full-width card (Matching v3-01 "Percentage" card)
          ───────────────────────────────────────────────────────────── */}
-      <section className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-[#FACC15]" />
-            <span>Calisthenics Routines</span>
-          </h4>
-          <span className="text-[10px] text-zinc-500">Tap to log</span>
+      <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-white">Energy Burn</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">Logged just now</div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <button
-            onClick={() =>
-              handleLogPreset(
-                'Push & Dips Focus',
-                'calisthenics',
-                45,
-                220,
-                ['Parallel Bar Dips: 4x10', 'Push-ups: 4x15', 'Pike Push-ups: 3x8', 'Plank: 3x60s']
-              )
-            }
-            className="p-3 rounded-2xl bg-zinc-900/60 hover:bg-zinc-800 border border-white/[0.04] text-left transition-all group"
-          >
-            <div className="text-xs font-bold text-white group-hover:text-[#FACC15] transition-colors">
-              Push & Dips Focus
-            </div>
-            <div className="text-[10px] text-zinc-500 mt-1">45 min • 220 kcal • Dips</div>
-          </button>
-
-          <button
-            onClick={() =>
-              handleLogPreset(
-                'Pull-ups & Core Strength',
-                'calisthenics',
-                40,
-                200,
-                ['Pull-ups (Overhand): 4x6', 'Chin-ups: 3x8', 'Hanging Leg Raises: 4x12', 'Hollow Body: 3x45s']
-              )
-            }
-            className="p-3 rounded-2xl bg-zinc-900/60 hover:bg-zinc-800 border border-white/[0.04] text-left transition-all group"
-          >
-            <div className="text-xs font-bold text-white group-hover:text-[#FACC15] transition-colors">
-              Pull-ups & Core
-            </div>
-            <div className="text-[10px] text-zinc-500 mt-1">40 min • 200 kcal • Pull-ups</div>
-          </button>
-
-          <button
-            onClick={() =>
-              handleLogPreset(
-                'Handstand & Mobility',
-                'calisthenics',
-                30,
-                140,
-                ['Wall Handstand Holds: 5x30s', 'Wrist Mobility: 3 sets', 'Deep Squats: 3x20']
-              )
-            }
-            className="p-3 rounded-2xl bg-zinc-900/60 hover:bg-zinc-800 border border-white/[0.04] text-left transition-all group"
-          >
-            <div className="text-xs font-bold text-white group-hover:text-[#FACC15] transition-colors">
-              Handstand & Mobility
-            </div>
-            <div className="text-[10px] text-zinc-500 mt-1">30 min • 140 kcal • Holds</div>
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="text-3xl font-black text-[#22C55E] tracking-tight">
+            {todayCalories} <span className="text-sm font-medium text-zinc-500">kcal</span>
+          </div>
+          <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
         </div>
-      </section>
+      </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. TODAY'S WORKOUTS OR EMPTY STATE (No image, plain Lucide icon per brief)
+          CARD 4: Full-width card (Matching v3-01 "Cardio 365" card)
          ───────────────────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+      <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold text-white">Cardio 365</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">15+ min unlocks +10 pts</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-xs font-black text-[#22C55E]">
+            {workouts.length > 0 ? workouts.length : 1}
+          </div>
+          <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          CARD 5: Calisthenics Routines & Logged Sessions
+         ───────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() =>
+            handleLogPreset(
+              'Push & Dips Focus',
+              'calisthenics',
+              45,
+              220,
+              ['Parallel Bar Dips: 4x10', 'Push-ups: 4x15', 'Pike Push-ups: 3x8']
+            )
+          }
+          className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-4 text-left transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-white">Push & Dips</span>
+            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-600" />
+          </div>
+          <span className="text-[10px] text-zinc-500 font-medium">45 min • 220 kcal</span>
+        </button>
+
+        <button
+          onClick={() =>
+            handleLogPreset(
+              'Pull-ups & Core',
+              'calisthenics',
+              40,
+              200,
+              ['Pull-ups: 4x6', 'Chin-ups: 3x8', 'Hanging Leg Raises: 4x12']
+            )
+          }
+          className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-4 text-left transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-white">Pull-ups & Core</span>
+            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-600" />
+          </div>
+          <span className="text-[10px] text-zinc-500 font-medium">40 min • 200 kcal</span>
+        </button>
+      </div>
+
+      {/* Logged Workouts List */}
+      <div className="space-y-2.5 pt-1">
+        <div className="text-xs font-semibold text-zinc-400 px-1">
           Logged Sessions
-        </h4>
+        </div>
 
         {workouts.length === 0 ? (
-          /* Empty state: plain Lucide icon + one line text per Rule 6 */
-          <div className="bg-[#121214] border border-white/[0.06] rounded-3xl p-8 text-center flex flex-col items-center">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/[0.06] flex items-center justify-center text-zinc-500 mb-3">
-              <Dumbbell className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-semibold text-zinc-300 mb-4">No workouts recorded today</p>
-            <button
-              onClick={() => onOpenQuickLog('workout')}
-              className="py-2.5 px-4 rounded-xl bg-[#F95738] text-white font-bold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Log Training Session</span>
-            </button>
+          /* Empty state: one Lucide icon + one line text */
+          <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-8 text-center flex flex-col items-center">
+            <Dumbbell className="w-8 h-8 text-zinc-600 mb-2" />
+            <p className="text-xs text-zinc-400 font-medium">No workouts logged today</p>
           </div>
         ) : (
-          <div className="space-y-2.5">
-            {workouts.map((w) => (
-              <div
-                key={w.id}
-                className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/[0.06] flex items-center justify-center text-[#F95738]">
-                      <Dumbbell className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-bold text-white">{w.name}</h5>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
-                        <span className="capitalize text-zinc-300">{w.type}</span>
-                        <span>•</span>
-                        <span>{w.durationMin} mins</span>
-                        <span>•</span>
-                        <span className="text-[#F95738]">{w.calories} kcal</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#FACC15] bg-[#FACC15]/10 px-2 py-0.5 rounded-lg border border-[#FACC15]/20">
-                      +10 Pts
-                    </span>
-                    <button
-                      onClick={() => onDeleteWorkout(w.id)}
-                      className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      title="Delete workout"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+          workouts.map((w) => (
+            <div
+              key={w.id}
+              className="bg-[#121815] border border-white/[0.05] rounded-2xl p-4 transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-white">{w.name}</h4>
+                  <div className="text-[11px] text-zinc-500 mt-0.5">
+                    {w.durationMin}m • <span className="text-[#22C55E]">{w.calories} kcal</span>
                   </div>
                 </div>
-
-                {/* Exercises list */}
-                {w.exercises && w.exercises.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-1">
-                    {w.exercises.map((ex, idx) => (
-                      <div
-                        key={idx}
-                        className="text-xs py-1 px-2.5 rounded-lg bg-zinc-900/60 text-zinc-300 flex justify-between"
-                      >
-                        <span>{ex.name}</span>
-                        {ex.sets && ex.reps && (
-                          <span className="text-zinc-500 font-mono text-[11px]">
-                            {ex.sets}s × {ex.reps}r
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-[#22C55E] bg-[#22C55E]/10 border border-[#22C55E]/20 px-2 py-0.5 rounded-lg">
+                    +10 pts
+                  </span>
+                  <button
+                    onClick={() => onDeleteWorkout(w.id)}
+                    className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    title="Delete workout"
+                    aria-label="Delete workout"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+
+              {w.exercises && w.exercises.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-1">
+                  {w.exercises.map((ex, idx) => (
+                    <div
+                      key={idx}
+                      className="text-xs py-1 px-2.5 rounded-lg bg-[#18201C] text-zinc-300"
+                    >
+                      {ex.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
         )}
-      </section>
+      </div>
     </div>
   );
 };

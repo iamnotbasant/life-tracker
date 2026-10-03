@@ -4,8 +4,8 @@
   "description": "Daily points, energy, calisthenics, meals, and habit tracker for Basant",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0A0F0D",
+  "theme_color": "#0A0F0D",
   "icons": [
     {
       "src": "/assets/app-icon.png",
