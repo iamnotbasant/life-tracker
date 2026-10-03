@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import { Flame, Calendar, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { Flame, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { TabType, UserProfile } from '../lib/types';
 import { formatDateLabel } from '../lib/utils';
 
@@ -47,71 +46,68 @@ export const Header: React.FC<HeaderProps> = ({
     onDateChange('2026-10-03');
   };
 
+  const initial = profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'B';
+
   return (
-    <header className="sticky top-0 z-30 bg-[#070A11]/90 backdrop-blur-md border-b border-white/[0.08] px-4 py-3">
-      <div className="max-w-2xl mx-auto flex items-center justify-between">
-        {/* Profile Avatar & Greeting */}
+    <header className="sticky top-0 z-30 bg-black/90 backdrop-blur-md border-b border-white/[0.06] px-4 py-3">
+      <div className="max-w-xl mx-auto flex items-center justify-between">
+        {/* Profile Avatar (Initials in circle per brief) & Date Header */}
         <div 
           onClick={() => onSelectTab('settings')}
           className="flex items-center gap-3 cursor-pointer group"
           role="button"
           tabIndex={0}
         >
-          <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#FF5E1E]/40 group-hover:ring-[#FF5E1E] transition-all bg-[#121826]">
-            <Image
-              src="/assets/avatar-basant.png"
-              alt={profile.name}
-              fill
-              className="object-cover"
-              sizes="40px"
-              priority
-            />
+          <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/80 text-white font-bold text-sm flex items-center justify-center group-hover:border-[#FACC15] transition-colors shrink-0">
+            {initial}
           </div>
           <div>
-            <div className="text-xs font-medium text-slate-400">Welcome back</div>
-            <div className="text-base font-bold text-white tracking-tight leading-none group-hover:text-[#FF5E1E] transition-colors">
-              {profile.name}
+            <div className="text-[11px] font-medium text-zinc-400">
+              {isToday ? 'Today' : 'Date'}
+            </div>
+            <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-[#FACC15] transition-colors">
+              {formatDateLabel(activeDate)}
             </div>
           </div>
         </div>
 
-        {/* Date Selector & Streak */}
+        {/* Date Selector & Points Pill */}
         <div className="flex items-center gap-2">
           {/* Points/Streak Pill */}
           <button
             onClick={onOpenPointsInfo}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#182035] hover:bg-[#1E2945] border border-white/[0.08] text-xs font-semibold text-white transition-all shadow-sm active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181B] hover:bg-[#27272A] border border-white/[0.08] text-xs font-semibold text-white transition-all active:scale-95"
             title="View Points & Streak Rules"
           >
-            <Flame className="w-4 h-4 text-[#FF5E1E] animate-pulse" />
+            <Flame className="w-3.5 h-3.5 text-[#FACC15]" />
             <span>{streak}d</span>
-            <span className="text-slate-500">•</span>
-            <span className={todayPoints >= 0 ? "text-[#FF8800]" : "text-rose-400"}>
+            <span className="text-zinc-600">•</span>
+            <span className={todayPoints >= 0 ? "text-[#FACC15]" : "text-rose-400"}>
               {todayPoints >= 0 ? `+${todayPoints}` : todayPoints}
             </span>
           </button>
 
           {/* Quick Date Switcher */}
-          <div className="flex items-center bg-[#111726] border border-white/[0.08] rounded-xl p-0.5">
+          <div className="flex items-center bg-[#18181B] border border-white/[0.08] rounded-xl p-0.5">
             <button
               onClick={handlePrevDay}
-              className="p-1.5 hover:bg-white/[0.06] rounded-lg text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-white/[0.08] rounded-lg text-zinc-400 hover:text-white transition-colors"
               aria-label="Previous day"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleTodayClick}
-              className="px-2 py-1 text-xs font-medium text-slate-300 hover:text-white"
+              className="px-2 py-1 text-xs font-medium text-zinc-300 hover:text-white"
             >
-              {isToday ? 'Today' : formatDateLabel(activeDate)}
+              {isToday ? 'Today' : 'Jump'}
             </button>
             <button
               onClick={handleNextDay}
-              className="p-1.5 hover:bg-white/[0.06] rounded-lg text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-white/[0.08] rounded-lg text-zinc-400 hover:text-white transition-colors"
               aria-label="Next day"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

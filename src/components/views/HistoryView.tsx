@@ -8,9 +8,6 @@ import {
   UtensilsCrossed,
   Moon,
   Zap,
-  Calendar,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
 import { AppState } from '../../lib/types';
 import { YearlyHeatmap } from '../YearlyHeatmap';
@@ -23,8 +20,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
   const { profile, activeDate, days } = state;
   const [viewFilter, setViewFilter] = useState<'yearly' | 'all' | 'nutrition' | 'fitness'>('yearly');
 
-  // Compute heatmap datasets for each of the core life tracker habits:
-
+  // Compute heatmap datasets:
   // 1. Steps heatmap
   const stepsHeatmap: Record<string, { date: string; value: number; completed: boolean; label?: string }> = {};
   let stepsTotalDays = 0;
@@ -61,7 +57,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
   let calorieTotalDays = 0;
   for (const [dateStr, d] of Object.entries(days)) {
     const kcal = (d.meals || []).reduce((sum, m) => sum + (m.calories || 0), 0);
-    const hit = kcal >= 2200; // maintain or gain zone
+    const hit = kcal >= 2200;
     if (hit) calorieTotalDays++;
     calorieHeatmap[dateStr] = {
       date: dateStr,
@@ -117,51 +113,51 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
   }
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-6 pb-28 max-w-xl mx-auto">
       {/* ─────────────────────────────────────────────────────────────
-          HEADER & SEGMENTED VIEW CONTROL (Exact ref-04 layout)
+          HEADER & SEGMENTED VIEW CONTROL (Ref-02 & Ref-04)
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <span>Habits & Heatmaps</span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#A855F7] border border-[#8B5CF6]/30">
-              365-Day Grids
+          <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+            <span>Your Habits</span>
+            <span className="text-xs font-bold text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-full border border-white/[0.04]">
+              (6)
             </span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Full year GitHub-style activity matrix for every daily discipline
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Consistency matrices for each discipline
           </p>
         </div>
 
-        {/* Ref-04 Segmented Switcher */}
-        <div className="flex items-center bg-[#111726] border border-white/[0.08] p-1 rounded-2xl self-start sm:self-auto">
+        {/* Ref-02 Segmented View Pill */}
+        <div className="flex items-center bg-[#121214] border border-white/[0.06] p-1 rounded-2xl">
           <button
             onClick={() => setViewFilter('yearly')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
               viewFilter === 'yearly'
-                ? 'bg-[#8B5CF6] text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FACC15] text-black shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Yearly
+            All
           </button>
           <button
             onClick={() => setViewFilter('fitness')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
               viewFilter === 'fitness'
-                ? 'bg-[#8B5CF6] text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FACC15] text-black shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             Fitness
           </button>
           <button
             onClick={() => setViewFilter('nutrition')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
               viewFilter === 'nutrition'
-                ? 'bg-[#8B5CF6] text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FACC15] text-black shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             Nutrition
@@ -170,132 +166,102 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          ONE CARD PER HABIT WITH YEARLY HEATMAP (Direct ref-04 design)
+          HABIT MATRICES (Direct Ref-02 design)
          ───────────────────────────────────────────────────────────── */}
       <div className="space-y-4">
         {/* Habit 1: Points Engine */}
         {(viewFilter === 'yearly' || viewFilter === 'all') && (
           <YearlyHeatmap
-            title="Daily Points Engine"
-            subtitle="Overall discipline & target achievement"
-            icon={<Flame className="w-5 h-5" />}
-            accentColor="#FF5E1E"
+            title="Daily Points"
+            subtitle="Overall daily discipline score"
+            icon={<Flame className="w-4 h-4 text-[#FACC15]" />}
+            accentColor="#FACC15"
             data={pointsHeatmap}
             currentDate={activeDate}
             streakCount={days[activeDate]?.points > 0 ? 1 : 0}
             totalDaysCount={pointsTotalDays}
             unitLabel="points"
             targetThreshold={25}
-            actionBadge={
-              <span className="text-xs font-bold text-[#FF8800] bg-[#FF5E1E]/15 px-2.5 py-1 rounded-lg">
-                Score
-              </span>
-            }
           />
         )}
 
         {/* Habit 2: Daily Steps (10k goal) */}
         {(viewFilter === 'yearly' || viewFilter === 'fitness') && (
           <YearlyHeatmap
-            title="Daily Steps & Walking"
+            title="Daily Steps"
             subtitle="Goal: 10,000 steps per day"
-            icon={<Footprints className="w-5 h-5" />}
-            accentColor="#10B981"
+            icon={<Footprints className="w-4 h-4 text-[#FACC15]" />}
+            accentColor="#FACC15"
             data={stepsHeatmap}
             currentDate={activeDate}
             streakCount={days[activeDate]?.steps >= 10000 ? 1 : 0}
             totalDaysCount={stepsTotalDays}
             unitLabel="steps"
             targetThreshold={10000}
-            actionBadge={
-              <span className="text-xs font-bold text-[#10B981] bg-[#10B981]/15 px-2.5 py-1 rounded-lg">
-                10k
-              </span>
-            }
           />
         )}
 
         {/* Habit 3: Calisthenics & Workouts */}
         {(viewFilter === 'yearly' || viewFilter === 'fitness') && (
           <YearlyHeatmap
-            title="Calisthenics Workouts"
-            subtitle="Parallel bar dips, push-ups, pull-ups, core"
-            icon={<Dumbbell className="w-5 h-5" />}
-            accentColor="#06B6D4"
+            title="Calisthenics"
+            subtitle="Goal: 15+ min session"
+            icon={<Dumbbell className="w-4 h-4 text-[#F95738]" />}
+            accentColor="#F95738"
             data={workoutHeatmap}
             currentDate={activeDate}
             streakCount={days[activeDate]?.workouts?.length ? 1 : 0}
             totalDaysCount={workoutTotalDays}
             unitLabel="mins"
             targetThreshold={30}
-            actionBadge={
-              <span className="text-xs font-bold text-[#06B6D4] bg-[#06B6D4]/15 px-2.5 py-1 rounded-lg">
-                15m+
-              </span>
-            }
           />
         )}
 
         {/* Habit 4: Calorie Surplus (2500 kcal) */}
         {(viewFilter === 'yearly' || viewFilter === 'nutrition') && (
           <YearlyHeatmap
-            title="Caloric Surplus Intake"
+            title="Caloric Surplus"
             subtitle="Goal: 2,500 kcal healthy weight gain"
-            icon={<Zap className="w-5 h-5" />}
-            accentColor="#F59E0B"
+            icon={<Zap className="w-4 h-4 text-[#FACC15]" />}
+            accentColor="#FACC15"
             data={calorieHeatmap}
             currentDate={activeDate}
             streakCount={0}
             totalDaysCount={calorieTotalDays}
             unitLabel="kcal"
             targetThreshold={2400}
-            actionBadge={
-              <span className="text-xs font-bold text-[#F59E0B] bg-[#F59E0B]/15 px-2.5 py-1 rounded-lg">
-                2.5k kcal
-              </span>
-            }
           />
         )}
 
         {/* Habit 5: Daily Protein 85g+ */}
         {(viewFilter === 'yearly' || viewFilter === 'nutrition') && (
           <YearlyHeatmap
-            title="Protein Intake (85g+)"
-            subtitle="Muscle protein synthesis & hypertrophy"
-            icon={<UtensilsCrossed className="w-5 h-5" />}
-            accentColor="#84CC16"
+            title="Protein Intake"
+            subtitle="Goal: 85g+ daily protein"
+            icon={<UtensilsCrossed className="w-4 h-4 text-[#FACC15]" />}
+            accentColor="#FACC15"
             data={proteinHeatmap}
             currentDate={activeDate}
             streakCount={0}
             totalDaysCount={proteinTotalDays}
-            unitLabel="grams protein"
+            unitLabel="g protein"
             targetThreshold={85}
-            actionBadge={
-              <span className="text-xs font-bold text-[#84CC16] bg-[#84CC16]/15 px-2.5 py-1 rounded-lg">
-                85g+
-              </span>
-            }
           />
         )}
 
         {/* Habit 6: Sleep & 23:30 Bedtime */}
         {(viewFilter === 'yearly' || viewFilter === 'all') && (
           <YearlyHeatmap
-            title="Sleep & Circadian Rhythm"
+            title="Sleep & Bedtime"
             subtitle="Goal: 7–8.5h sleep, asleep by 23:30"
-            icon={<Moon className="w-5 h-5" />}
-            accentColor="#8B5CF6"
+            icon={<Moon className="w-4 h-4 text-zinc-300" />}
+            accentColor="#FACC15"
             data={sleepHeatmap}
             currentDate={activeDate}
             streakCount={0}
             totalDaysCount={sleepTotalDays}
             unitLabel="hours"
             targetThreshold={7}
-            actionBadge={
-              <span className="text-xs font-bold text-[#8B5CF6] bg-[#8B5CF6]/15 px-2.5 py-1 rounded-lg">
-                7-8.5h
-              </span>
-            }
           />
         )}
       </div>

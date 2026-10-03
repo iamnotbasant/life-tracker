@@ -8,9 +8,7 @@ import {
   UtensilsCrossed,
   CalendarDays,
   Settings,
-  FlameKindling,
-  Scale,
-  Zap,
+  Plus,
 } from 'lucide-react';
 import { TabType } from '../lib/types';
 import { cn } from '../lib/utils';
@@ -26,33 +24,31 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onSelectTab,
   onOpenQuickLog,
 }) => {
-  const navItems: Array<{ tab: TabType; label: string; icon: any; color: string }> = [
-    { tab: 'home', label: 'Home', icon: Flame, color: '#FF5E1E' },
-    { tab: 'steps', label: 'Steps', icon: Footprints, color: '#10B981' },
-    { tab: 'workout', label: 'Workouts', icon: Dumbbell, color: '#06B6D4' },
-    { tab: 'meals', label: 'Meals', icon: UtensilsCrossed, color: '#84CC16' },
-    { tab: 'history', label: 'Heatmaps', icon: CalendarDays, color: '#8B5CF6' },
+  const navItems: Array<{ tab: TabType; label: string; icon: any }> = [
+    { tab: 'home', label: 'Home', icon: Flame },
+    { tab: 'steps', label: 'Steps', icon: Footprints },
+    { tab: 'workout', label: 'Workout', icon: Dumbbell },
+    { tab: 'meals', label: 'Meals', icon: UtensilsCrossed },
+    { tab: 'history', label: 'Habits', icon: CalendarDays },
   ];
 
   return (
     <>
-      {/* Floating Center Quick Log Action Button */}
+      {/* Floating Minimal Quick Log Action Button */}
       <div className="fixed bottom-20 right-4 z-40 sm:right-8">
         <button
           onClick={onOpenQuickLog}
-          className="group relative flex items-center justify-center w-13 h-13 rounded-2xl bg-gradient-to-tr from-[#FF5E1E] to-[#FFA114] text-white shadow-lg shadow-[#FF5E1E]/30 hover:scale-105 active:scale-95 transition-all"
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-[#FACC15] text-black shadow-lg shadow-black/60 hover:scale-105 active:scale-95 transition-all"
           title="Quick Log"
+          aria-label="Quick Log"
         >
-          <span className="text-2xl font-bold leading-none">+</span>
-          <span className="absolute -top-8 bg-[#111726] border border-white/10 text-[10px] text-white font-medium px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">
-            Quick Log
-          </span>
+          <Plus className="w-6 h-6 stroke-[2.5]" />
         </button>
       </div>
 
       {/* Docked Mobile-first Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#070A11]/95 backdrop-blur-lg border-t border-white/[0.08] px-2 py-1.5 pb-safe">
-        <div className="max-w-2xl mx-auto flex items-center justify-around">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-lg border-t border-white/[0.06] px-2 py-2">
+        <div className="max-w-xl mx-auto flex items-center justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.tab;
@@ -61,31 +57,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 key={item.tab}
                 onClick={() => onSelectTab(item.tab)}
                 className={cn(
-                  'flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all relative',
-                  isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                  'flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative',
+                  isActive ? 'text-[#FACC15]' : 'text-zinc-500 hover:text-zinc-300'
                 )}
               >
-                {isActive && (
-                  <span
-                    className="absolute -top-1.5 w-8 h-1 rounded-full shadow-sm"
-                    style={{ backgroundColor: item.color }}
-                  />
-                )}
-                <div
-                  className={cn(
-                    'p-1.5 rounded-xl transition-all',
-                    isActive ? 'bg-white/[0.08]' : ''
-                  )}
-                  style={isActive ? { color: item.color } : {}}
-                >
-                  <Icon className="w-5 h-5" />
+                <div className="p-1">
+                  <Icon className={cn('w-5 h-5', isActive ? 'stroke-[2.2]' : 'stroke-[1.8]')} />
                 </div>
                 <span
                   className={cn(
-                    'text-[10px] font-semibold tracking-tight transition-colors',
-                    isActive ? 'font-bold' : ''
+                    'text-[10px] tracking-tight transition-colors',
+                    isActive ? 'font-bold text-[#FACC15]' : 'font-medium text-zinc-500'
                   )}
-                  style={isActive ? { color: item.color } : {}}
                 >
                   {item.label}
                 </span>
@@ -93,23 +76,27 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             );
           })}
 
-          {/* Quick more / secondary tabs icon (settings, weight, calories, walk) */}
+          {/* Settings / More tab */}
           <button
             onClick={() => onSelectTab('settings')}
             className={cn(
-              'flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all relative',
+              'flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative',
               currentTab === 'settings' || currentTab === 'calories' || currentTab === 'weight' || currentTab === 'walk'
-                ? 'text-white'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#FACC15]'
+                : 'text-zinc-500 hover:text-zinc-300'
             )}
           >
-            {(currentTab === 'settings' || currentTab === 'calories' || currentTab === 'weight' || currentTab === 'walk') && (
-              <span className="absolute -top-1.5 w-8 h-1 rounded-full bg-[#38BDF8]" />
-            )}
-            <div className="p-1.5 rounded-xl">
-              <Settings className="w-5 h-5" />
+            <div className="p-1">
+              <Settings className={cn('w-5 h-5', (currentTab === 'settings' || currentTab === 'calories' || currentTab === 'weight' || currentTab === 'walk') ? 'stroke-[2.2]' : 'stroke-[1.8]')} />
             </div>
-            <span className="text-[10px] font-semibold tracking-tight">More</span>
+            <span
+              className={cn(
+                'text-[10px] tracking-tight transition-colors',
+                (currentTab === 'settings' || currentTab === 'calories' || currentTab === 'weight' || currentTab === 'walk') ? 'font-bold text-[#FACC15]' : 'font-medium text-zinc-500'
+              )}
+            >
+              More
+            </span>
           </button>
         </div>
       </nav>

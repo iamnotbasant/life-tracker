@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Footprints, Utensils, Dumbbell, Footprints as WalkIcon, Scale, Plus } from 'lucide-react';
-import { MealEntry, MealType, WalkSession, WorkoutEntry, WeightEntry, UserProfile } from '../lib/types';
+import { X, Footprints, Utensils, Dumbbell, Footprints as WalkIcon, Scale } from 'lucide-react';
+import { MealEntry, MealType, WalkSession, WorkoutEntry, UserProfile } from '../lib/types';
 import { estimateStepsCalories } from '../lib/points';
 
 interface QuickLogModalProps {
@@ -46,7 +46,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
   const [mealTime, setMealTime] = useState('13:00');
 
   // Walk state
-  const [walkTitle, setWalkTitle] = useState('Campus Stroll');
+  const [walkTitle, setWalkTitle] = useState('Campus Walk');
   const [walkDist, setWalkDist] = useState('2.5');
   const [walkDur, setWalkDur] = useState('30');
   const [walkSteps, setWalkSteps] = useState('3200');
@@ -136,27 +136,27 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-      <div className="relative w-full max-w-md bg-[#0F1524] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+      <div className="relative w-full max-w-md bg-[#121214] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#131A2D]">
-          <h3 className="text-lg font-bold text-white tracking-tight">Quick Log</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-zinc-900/50">
+          <h3 className="text-base font-bold text-white tracking-tight">Quick Log</h3>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex p-2 bg-[#0A0E18] border-b border-white/[0.06] gap-1 overflow-x-auto no-scrollbar">
+        <div className="flex p-2 bg-black border-b border-white/[0.06] gap-1 overflow-x-auto no-scrollbar">
           {[
-            { id: 'steps', label: 'Steps', icon: Footprints, color: '#10B981' },
-            { id: 'meal', label: 'Meal', icon: Utensils, color: '#84CC16' },
-            { id: 'walk', label: 'Walk', icon: WalkIcon, color: '#F97316' },
-            { id: 'workout', label: 'Workout', icon: Dumbbell, color: '#06B6D4' },
-            { id: 'weight', label: 'Weight', icon: Scale, color: '#F43F5E' },
+            { id: 'steps', label: 'Steps', icon: Footprints },
+            { id: 'meal', label: 'Meal', icon: Utensils },
+            { id: 'walk', label: 'Walk', icon: WalkIcon },
+            { id: 'workout', label: 'Workout', icon: Dumbbell },
+            { id: 'weight', label: 'Weight', icon: Scale },
           ].map(t => {
             const Icon = t.icon;
             const isSel = activeTab === t.id;
@@ -164,12 +164,11 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id as any)}
-                className={`flex-1 min-w-[70px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 min-w-[65px] flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition-all ${
                   isSel
-                    ? 'bg-white/10 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
+                    ? 'bg-[#FACC15] text-black shadow-sm'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                 }`}
-                style={isSel ? { color: t.color } : {}}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{t.label}</span>
@@ -184,7 +183,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
           {activeTab === 'steps' && (
             <form onSubmit={handleSaveSteps} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
                   Total Steps for {activeDate}
                 </label>
                 <input
@@ -192,7 +191,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={stepInput}
                   onChange={e => setStepInput(Number(e.target.value))}
                   placeholder="e.g. 10000"
-                  className="w-full bg-[#151D30] border border-white/10 rounded-2xl px-4 py-3 text-2xl font-black text-white focus:outline-none focus:border-[#10B981]"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-2xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#FACC15]"
                 />
               </div>
 
@@ -203,7 +202,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     key={amt}
                     type="button"
                     onClick={() => setStepInput(prev => (prev || 0) + amt)}
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-semibold text-slate-300 active:scale-95 transition-all"
+                    className="flex-1 py-1.5 px-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/[0.06] text-xs font-semibold text-zinc-300 active:scale-95 transition-all"
                   >
                     +{amt}
                   </button>
@@ -211,15 +210,15 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
               </div>
 
               {/* Calorie estimate preview */}
-              <div className="p-3 rounded-2xl bg-[#121A2C] border border-white/[0.06] text-xs text-slate-300 flex items-center justify-between">
-                <span>Est. Burn (@ {profile.weightKg} kg):</span>
-                <span className="font-bold text-[#10B981]">
+              <div className="p-3 rounded-2xl bg-zinc-900/60 border border-white/[0.04] text-xs text-zinc-400 flex items-center justify-between">
+                <span>Burn estimate (@ {profile.weightKg} kg):</span>
+                <span className="font-bold text-[#FACC15]">
                   ~{estimateStepsCalories(stepInput, profile.stepCalorieFactor)} kcal
                 </span>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-zinc-400 mb-1">
                   Optional Note
                 </label>
                 <input
@@ -227,13 +226,13 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={stepsNote}
                   onChange={e => setStepsNote(e.target.value)}
                   placeholder="e.g. Evening walk in college campus"
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#10B981]"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FACC15]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#10B981] hover:bg-[#059669] text-white font-bold text-sm shadow-lg shadow-[#10B981]/25 transition-all"
+                className="w-full py-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-black font-bold text-sm transition-all"
               >
                 Save Steps
               </button>
@@ -243,7 +242,6 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
           {/* TAB 2: MEAL */}
           {activeTab === 'meal' && (
             <form onSubmit={handleAddMeal} className="space-y-4">
-              {/* Meal Type pills */}
               <div className="grid grid-cols-4 gap-2">
                 {(['breakfast', 'lunch', 'snack', 'dinner'] as MealType[]).map(t => (
                   <button
@@ -252,8 +250,8 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     onClick={() => setMealType(t)}
                     className={`py-2 text-xs font-bold capitalize rounded-xl border transition-all ${
                       mealType === t
-                        ? 'bg-[#84CC16]/20 border-[#84CC16] text-[#84CC16]'
-                        : 'bg-[#151D30] border-white/10 text-slate-400 hover:text-white'
+                        ? 'bg-[#FACC15] border-[#FACC15] text-black'
+                        : 'bg-zinc-900 border-white/[0.06] text-zinc-400 hover:text-white'
                     }`}
                   >
                     {t}
@@ -262,7 +260,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                   Food Description
                 </label>
                 <input
@@ -270,14 +268,14 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   required
                   value={mealDesc}
                   onChange={e => setMealDesc(e.target.value)}
-                  placeholder="e.g. 4 roti + dal tadka + paneer bhurji"
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#84CC16]"
+                  placeholder="e.g. 4 roti + dal + paneer bhurji"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FACC15]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Calories (kcal)
                   </label>
                   <input
@@ -285,11 +283,11 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     required
                     value={mealKcal}
                     onChange={e => setMealKcal(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-lg font-bold text-white focus:outline-none focus:border-[#84CC16]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#FACC15]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Protein (g)
                   </label>
                   <input
@@ -298,28 +296,28 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     required
                     value={mealProtein}
                     onChange={e => setMealProtein(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-lg font-bold text-white focus:outline-none focus:border-[#84CC16]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#FACC15]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-zinc-400 mb-1">
                   Time
                 </label>
                 <input
                   type="text"
                   value={mealTime}
                   onChange={e => setMealTime(e.target.value)}
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#84CC16] hover:bg-[#65A30D] text-black font-bold text-sm shadow-lg shadow-[#84CC16]/25 transition-all"
+                className="w-full py-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-black font-bold text-sm transition-all"
               >
-                Log Meal (+Points)
+                Log Meal
               </button>
             </form>
           )}
@@ -328,7 +326,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
           {activeTab === 'walk' && (
             <form onSubmit={handleAddWalk} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                   Walk Title
                 </label>
                 <input
@@ -336,24 +334,24 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={walkTitle}
                   onChange={e => setWalkTitle(e.target.value)}
                   placeholder="e.g. Evening Campus Loop"
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F97316]"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Steps Count
                   </label>
                   <input
                     type="number"
                     value={walkSteps}
                     onChange={e => setWalkSteps(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-lg font-bold text-white focus:outline-none focus:border-[#F97316]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Distance (km)
                   </label>
                   <input
@@ -361,39 +359,39 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     step="0.01"
                     value={walkDist}
                     onChange={e => setWalkDist(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-lg font-bold text-white focus:outline-none focus:border-[#F97316]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Duration (min)
                   </label>
                   <input
                     type="number"
                     value={walkDur}
                     onChange={e => setWalkDur(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F97316]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Avg BPM (optional)
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
+                    Avg BPM
                   </label>
                   <input
                     type="number"
                     value={walkBpm}
                     onChange={e => setWalkBpm(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F97316]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-sm shadow-lg shadow-[#F97316]/25 transition-all"
+                className="w-full py-3 rounded-2xl bg-[#F95738] hover:brightness-110 text-white font-bold text-sm transition-all"
               >
                 Save Walk Session
               </button>
@@ -404,7 +402,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
           {activeTab === 'workout' && (
             <form onSubmit={handleAddWorkout} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                   Workout Name
                 </label>
                 <input
@@ -412,50 +410,50 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                   value={woName}
                   onChange={e => setWoName(e.target.value)}
                   placeholder="e.g. Calisthenics Dips & Pull-ups"
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#06B6D4]"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F95738]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Duration (min)
                   </label>
                   <input
                     type="number"
                     value={woDur}
                     onChange={e => setWoDur(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                     Calories Burned
                   </label>
                   <input
                     type="number"
                     value={woKcal}
                     onChange={e => setWoKcal(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#F95738]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                  Exercises / Sets (one per line)
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
+                  Exercises / Sets
                 </label>
                 <textarea
                   rows={3}
                   value={woExercises}
                   onChange={e => setWoExercises(e.target.value)}
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#06B6D4]"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#F95738]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#06B6D4] hover:bg-[#0891B2] text-white font-bold text-sm shadow-lg shadow-[#06B6D4]/25 transition-all"
+                className="w-full py-3 rounded-2xl bg-[#F95738] hover:brightness-110 text-white font-bold text-sm transition-all"
               >
                 Log Workout (+10 Pts)
               </button>
@@ -466,7 +464,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
           {activeTab === 'weight' && (
             <form onSubmit={handleSaveWeight} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
                   Body Weight (kg)
                 </label>
                 <div className="flex items-center gap-3">
@@ -476,32 +474,28 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     required
                     value={weightInput}
                     onChange={e => setWeightInput(e.target.value)}
-                    className="w-full bg-[#151D30] border border-white/10 rounded-2xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#F43F5E]"
+                    className="w-full bg-zinc-900 border border-white/[0.08] rounded-2xl px-4 py-3 text-3xl font-black text-white focus:outline-none focus:border-[#FACC15]"
                   />
-                  <span className="text-xl font-bold text-slate-400">kg</span>
+                  <span className="text-xl font-bold text-zinc-500">kg</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Note / Context
+                <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                  Context / Note
                 </label>
                 <input
                   type="text"
                   value={weightNote}
                   onChange={e => setWeightNote(e.target.value)}
                   placeholder="e.g. Morning empty stomach"
-                  className="w-full bg-[#151D30] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#F43F5E]"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FACC15]"
                 />
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-[#F43F5E]/10 border border-[#F43F5E]/20 text-xs text-rose-300">
-                Logging your weight earns +5 points and updates your Mifflin-St Jeor metabolic baseline and steps factor!
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-2xl bg-[#F43F5E] hover:bg-[#E11D48] text-white font-bold text-sm shadow-lg shadow-[#F43F5E]/25 transition-all"
+                className="w-full py-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-black font-bold text-sm transition-all"
               >
                 Save Weight (+5 Pts)
               </button>

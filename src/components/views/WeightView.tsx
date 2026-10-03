@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import { Scale, Plus, TrendingUp, Award, Calendar, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
-import { AppState, WeightEntry } from '../../lib/types';
+import { Scale, Plus, TrendingUp, Award } from 'lucide-react';
+import { AppState } from '../../lib/types';
 import { formatDateLabel } from '../../lib/utils';
 
 interface WeightViewProps {
@@ -29,21 +28,21 @@ export const WeightView: React.FC<WeightViewProps> = ({
   const progressRatio = Math.max(0, Math.min(100, Math.round((diff / totalGainTarget) * 100)));
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-6 pb-28 max-w-xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-bold text-[#F43F5E] uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-[#FACC15] uppercase tracking-wider">
             Healthy Weight Gain
           </span>
-          <h3 className="text-xl font-black text-white tracking-tight">
-            Progression & Milestones
+          <h3 className="text-lg font-bold text-white tracking-tight">
+            Progression & Baseline
           </h3>
         </div>
 
         <button
           onClick={() => onOpenQuickLog('weight')}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-[#F43F5E] to-[#FB7185] text-white font-bold text-xs shadow-lg shadow-[#F43F5E]/25 hover:brightness-110 active:scale-95 transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FACC15] text-black font-bold text-xs hover:bg-[#FDE047] active:scale-95 transition-all"
         >
           <Plus className="w-4 h-4" />
           <span>Log Weight</span>
@@ -53,18 +52,18 @@ export const WeightView: React.FC<WeightViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           1. CURRENT WEIGHT HERO & SPARKLINE
          ───────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-[#200D16] via-[#161226] to-[#0D101C] border border-[#F43F5E]/30 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <section className="bg-[#121214] border border-white/[0.06] rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-2xl bg-[#F43F5E]/20 text-[#F43F5E]">
-              <Scale className="w-5 h-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/[0.04] flex items-center justify-center text-[#FACC15]">
+              <Scale className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Baseline</span>
-              <h4 className="text-sm font-bold text-white">Basant's Body Mass</h4>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Current Baseline</span>
+              <h4 className="text-xs font-bold text-white">Body Mass Progression</h4>
             </div>
           </div>
-          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/20 px-2.5 py-1 rounded-full flex items-center gap-1">
+          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>+{diff} kg Gained</span>
           </span>
@@ -76,87 +75,75 @@ export const WeightView: React.FC<WeightViewProps> = ({
             <span className="text-5xl sm:text-6xl font-black text-white tracking-tight">
               {currentWeight}
             </span>
-            <span className="text-2xl font-black text-slate-400">kg</span>
+            <span className="text-xl font-bold text-zinc-500">kg</span>
           </div>
 
           <div className="text-right">
-            <div className="text-sm font-bold text-white">Target: {targetWeight} kg</div>
-            <div className="text-xs text-[#F43F5E] font-semibold mt-0.5">{progressRatio}% to goal</div>
+            <div className="text-xs text-zinc-400">Target: {targetWeight} kg</div>
+            <div className="text-sm font-bold text-[#FACC15] mt-0.5">{progressRatio}% to goal</div>
           </div>
         </div>
 
         {/* Trend Sparkline SVG */}
-        <div className="mt-6 pt-4 border-t border-white/[0.08]">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
-            <span>Trend Graph (Baseline ➔ Current)</span>
-            <span className="text-slate-400 font-normal">Last {weightHistory.length} weigh-ins</span>
+        <div className="mt-6 pt-4 border-t border-white/[0.05]">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2 flex items-center justify-between">
+            <span>Trend Graph</span>
+            <span>Last {weightHistory.length} entries</span>
           </div>
 
           {/* Sparkline curve */}
-          <div className="relative h-20 w-full flex items-end">
+          <div className="relative h-16 w-full flex items-end">
             <svg className="w-full h-full overflow-visible" viewBox="0 0 300 80" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#FACC15" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#FACC15" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
-              {/* Area */}
               <polygon
                 points="0,70 50,60 120,45 200,30 280,25 280,80 0,80"
                 fill="url(#weightGrad)"
               />
-              {/* Line */}
               <polyline
                 points="0,70 50,60 120,45 200,30 280,25"
                 fill="none"
-                stroke="#F43F5E"
-                strokeWidth="3.5"
+                stroke="#FACC15"
+                strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {/* Points */}
-              <circle cx="0" cy="70" r="4" fill="#F43F5E" />
-              <circle cx="50" cy="60" r="4" fill="#F43F5E" />
-              <circle cx="120" cy="45" r="4" fill="#F43F5E" />
-              <circle cx="200" cy="30" r="4" fill="#F43F5E" />
-              <circle cx="280" cy="25" r="6" fill="#FFFFFF" stroke="#F43F5E" strokeWidth="3" />
+              <circle cx="0" cy="70" r="3.5" fill="#FACC15" />
+              <circle cx="50" cy="60" r="3.5" fill="#FACC15" />
+              <circle cx="120" cy="45" r="3.5" fill="#FACC15" />
+              <circle cx="200" cy="30" r="3.5" fill="#FACC15" />
+              <circle cx="280" cy="25" r="5" fill="#000000" stroke="#FACC15" strokeWidth="2.5" />
             </svg>
           </div>
 
-          <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-mono">
+          <div className="flex justify-between text-[10px] text-zinc-500 mt-2 font-mono">
             <span>{weightHistory[0]?.date || 'Sep 15'} ({startWeight}kg)</span>
-            <span className="text-white font-bold">{weightHistory[weightHistory.length - 1]?.date || 'Oct 03'} ({currentWeight}kg)</span>
+            <span className="text-zinc-300 font-bold">{weightHistory[weightHistory.length - 1]?.date || 'Oct 03'} ({currentWeight}kg)</span>
           </div>
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. MILESTONE BADGE CARD (Wiring in badge-weight-gain.png!)
+          2. MILESTONE CARD (Clean CSS/Lucide icon, NO image per brief)
          ───────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-r from-[#171F36] via-[#1A1830] to-[#141829] border border-white/10 rounded-3xl p-5 shadow-xl flex items-center gap-4">
-        {/* Milestone Badge Asset */}
-        <div className="relative w-20 h-20 shrink-0 drop-shadow-xl">
-          <Image
-            src="/assets/badge-weight-gain.png"
-            alt="Weight Gain Milestone Badge"
-            fill
-            className="object-contain"
-            sizes="80px"
-            priority
-          />
+      <section className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5 shadow-lg flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/[0.06] flex items-center justify-center text-[#FACC15] shrink-0">
+          <Award className="w-6 h-6" />
         </div>
 
-        <div className="flex-1">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-[#FFA114] uppercase tracking-wider">
-            <Award className="w-4 h-4 text-[#FFA114]" />
-            <span>Milestone Achieved</span>
+        <div>
+          <div className="text-[10px] font-bold text-[#FACC15] uppercase tracking-wider">
+            Milestone Achieved
           </div>
-          <h4 className="text-base font-bold text-white mt-0.5">
+          <h4 className="text-sm font-bold text-white mt-0.5">
             Phase 1: 48.9 kg Clean Mass
           </h4>
-          <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-            Consistently surplus-fueled calisthenics training. Every weigh-in confirms lean muscle adaptation!
+          <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+            Consistently surplus-fueled calisthenics. Every weigh-in confirms lean muscle adaptation.
           </p>
         </div>
       </section>
@@ -164,32 +151,32 @@ export const WeightView: React.FC<WeightViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           3. WEIGHT LOG HISTORY TABLE
          ───────────────────────────────────────────────────────────── */}
-      <section className="bg-[#111726] border border-white/[0.08] rounded-3xl p-5 shadow-lg">
-        <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">
+      <section className="bg-[#121214] border border-white/[0.06] rounded-3xl p-5 shadow-lg">
+        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
           Weigh-in History
         </h4>
         <div className="space-y-2">
           {weightHistory.slice().reverse().map((w) => (
             <div
               key={w.id}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0B101D] border border-white/[0.05]"
+              className="flex items-center justify-between p-3 rounded-2xl bg-zinc-900/60 border border-white/[0.04]"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-[#F43F5E]/15 text-[#F43F5E]">
-                  <Scale className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-zinc-900 border border-white/[0.04] flex items-center justify-center text-[#FACC15]">
+                  <Scale className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">{formatDateLabel(w.date)}</div>
+                  <div className="text-xs font-bold text-white">{formatDateLabel(w.date)}</div>
                   {w.note && (
-                    <div className="text-xs text-slate-400">{w.note}</div>
+                    <div className="text-[11px] text-zinc-500">{w.note}</div>
                   )}
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-lg font-black text-white">{w.weightKg} <span className="text-xs font-normal text-slate-400">kg</span></div>
-                <span className="text-[10px] font-bold text-[#10B981] bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                  +5 Pts Earned
+                <div className="text-sm font-black text-white">{w.weightKg} <span className="text-[10px] font-normal text-zinc-500">kg</span></div>
+                <span className="text-[10px] font-bold text-[#FACC15]">
+                  +5 Pts
                 </span>
               </div>
             </div>

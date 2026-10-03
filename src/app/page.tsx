@@ -46,10 +46,10 @@ export default function App() {
 
   if (!state) {
     return (
-      <div className="min-h-screen bg-[#070A11] flex items-center justify-center text-slate-400">
+      <div className="min-h-screen bg-black flex items-center justify-center text-zinc-400">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-[#FF5E1E] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <div className="w-8 h-8 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Loading Life Tracker...
           </span>
         </div>
@@ -204,7 +204,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A11] text-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans">
       {/* Top Sticky Header */}
       <Header
         profile={profile}
