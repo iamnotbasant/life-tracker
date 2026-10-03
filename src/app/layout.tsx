@@ -26,6 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <link rel="preload" as="image" href="/points-card-bg.webp" />
+      </head>
       <body className="bg-[#0A0F0D] text-[#F4F4F5] min-h-screen selection:bg-[#22C55E]/30 selection:text-white">
         {children}
       </body>

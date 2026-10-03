@@ -8,10 +8,15 @@ import {
   Sparkles,
   Save,
   CheckCircle,
+  Key,
+  Eye,
+  EyeOff,
+  ExternalLink,
 } from 'lucide-react';
 import { AppState, TabType, UserProfile } from '../../lib/types';
 import { exportBackupJSON, parseAndImportBackupJSON } from '../../lib/storage';
 import { getInitialSeedData } from '../../lib/seed-data';
+import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../../lib/gemini';
 
 interface SettingsViewProps {
   state: AppState;
@@ -32,13 +37,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [profile, setProfile] = useState<UserProfile>({ ...state.profile });
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [geminiKey, setGeminiKey] = useState<string>('');
+  const [isKeyVisible, setIsKeyVisible] = useState(false);
+  const [keySaveSuccess, setKeySaveSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    setGeminiKey(getGeminiApiKey());
+  }, []);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateProfile(profile);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleSaveGeminiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    setGeminiApiKey(geminiKey);
+    setKeySaveSuccess(true);
+    setTimeout(() => setKeySaveSuccess(false), 2500);
+  };
+
+  const handleClearGeminiKey = () => {
+    removeGeminiApiKey();
+    setGeminiKey('');
+    setKeySaveSuccess(false);
   };
 
   const handleExport = () => {
@@ -251,7 +276,88 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 3: Data Management (Plain Card List: Export / Import / Reset)
+          CARD 3: Gemini AI Estimation API Key
+         ───────────────────────────────────────────────────────────── */}
+      <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-[#22C55E]/15 text-[#22C55E]">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Gemini AI Estimation</h3>
+              <p className="text-[11px] text-zinc-500">1-tap calorie & macro estimates</p>
+            </div>
+          </div>
+
+          {keySaveSuccess && (
+            <span className="text-xs font-bold text-[#22C55E] flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>Saved</span>
+            </span>
+          )}
+        </div>
+
+        <form onSubmit={handleSaveGeminiKey} className="space-y-3">
+          <div>
+            <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <Key className="w-3 h-3 text-[#22C55E]" />
+              <span>Gemini API Key</span>
+            </label>
+            <div className="relative">
+              <input
+                type={isKeyVisible ? 'text' : 'password'}
+                value={geminiKey}
+                onChange={(e) => setGeminiKey(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full bg-[#18201C] border border-white/[0.06] rounded-xl px-3 py-2 pr-10 text-xs text-white focus:outline-none focus:border-[#22C55E] font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setIsKeyVisible(!isKeyVisible)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
+                aria-label={isKeyVisible ? 'Hide key' : 'Show key'}
+              >
+                {isKeyVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">
+              Stored in your browser's localStorage only. Free API key available at{' '}
+              <a
+                href="https://aistudio.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#22C55E] hover:underline inline-flex items-center gap-0.5"
+              >
+                <span>Google AI Studio</span>
+                <ExternalLink className="w-2.5 h-2.5 inline" />
+              </a>
+            </p>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button
+              type="submit"
+              className="flex-1 py-2 rounded-xl bg-[#22C55E] text-black font-bold text-xs hover:bg-[#16A34A] active:scale-[0.99] transition-all flex items-center justify-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>Save Key</span>
+            </button>
+            {geminiKey && (
+              <button
+                type="button"
+                onClick={handleClearGeminiKey}
+                className="py-2 px-3 rounded-xl bg-[#18201C] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/[0.06] font-semibold text-xs transition-all"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          CARD 4: Data Management (Plain Card List: Export / Import / Reset)
          ───────────────────────────────────────────────────────────── */}
       <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm space-y-3">
         <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">

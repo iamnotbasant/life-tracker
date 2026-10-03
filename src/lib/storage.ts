@@ -22,6 +22,7 @@ function isFakeSeedId(id: string): boolean {
     id === 'seed-meal-7' ||
     id === 'seed-meal-8' ||
     id.startsWith('seed-meal-hist-') ||
+    id === 'seed-walk-1' ||
     id === 'seed-walk-today' ||
     id.startsWith('seed-walk-hist-') ||
     id === 'seed-workout-today' ||
@@ -47,15 +48,23 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       changed = true;
       continue;
     }
-    const meals = day.meals.filter((m) => !isFakeSeedId(m.id));
-    const walks = day.walks.filter((w) => !isFakeSeedId(w.id));
-    const workouts = day.workouts.filter((w) => !isFakeSeedId(w.id));
+    const meals = (day.meals || []).filter((m) => !isFakeSeedId(m.id));
+    const walks = (day.walks || []).filter(
+      (w) => !isFakeSeedId(w.id) && w.id !== 'seed-walk-1' && w.title !== 'Campus Stroll'
+    );
+    const workouts = (day.workouts || []).filter((w) => !isFakeSeedId(w.id));
+    const hadFakeWeight = date === '2026-10-01' && day.weight !== undefined;
+
     if (
-      meals.length !== day.meals.length ||
-      walks.length !== day.walks.length ||
-      workouts.length !== day.workouts.length
+      meals.length !== (day.meals || []).length ||
+      walks.length !== (day.walks || []).length ||
+      workouts.length !== (day.workouts || []).length ||
+      hadFakeWeight
     ) {
       const cleaned: DayData = { ...day, meals, walks, workouts };
+      if (hadFakeWeight) {
+        delete cleaned.weight;
+      }
       try {
         const bd = calculateDayPoints(cleaned, state.profile);
         cleaned.points = bd.total;

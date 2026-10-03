@@ -8,23 +8,25 @@ import { calculateStreak } from '../lib/utils';
 import { BottomNav } from '../components/BottomNav';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { PointsInfoModal } from '../components/PointsInfoModal';
-import { QuickLogModal } from '../components/QuickLogModal';
+import { QuickLogModal, QuickLogTab } from '../components/QuickLogModal';
 import { HomeView } from '../components/views/HomeView';
 import { StepsView } from '../components/views/StepsView';
 import { WorkoutView } from '../components/views/WorkoutView';
 import { MealsView } from '../components/views/MealsView';
 import { CaloriesView } from '../components/views/CaloriesView';
 import { WeightView } from '../components/views/WeightView';
+import { SleepView } from '../components/views/SleepView';
 import { HistoryView } from '../components/views/HistoryView';
 import { SettingsView } from '../components/views/SettingsView';
 
 export default function App() {
   const [state, setState] = useState<AppState | null>(null);
   const [currentTab, setCurrentTab] = useState<TabType>('home');
+  const [detailView, setDetailView] = useState<'weight' | 'sleep' | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
-  const [quickLogDefaultTab, setQuickLogDefaultTab] = useState<'steps' | 'meal' | 'workout' | 'weight'>('steps');
+  const [quickLogDefaultTab, setQuickLogDefaultTab] = useState<QuickLogTab>('meal');
 
   // Load state on client mount
   useEffect(() => {
@@ -208,7 +210,7 @@ export default function App() {
     setState(prev => (prev ? { ...prev, onboardingCompleted: true } : prev));
   };
 
-  const handleOpenQuickLog = (tab: 'steps' | 'meal' | 'workout' | 'weight' = 'steps') => {
+  const handleOpenQuickLog = (tab: QuickLogTab = 'meal') => {
     setQuickLogDefaultTab(tab);
     setIsQuickLogOpen(true);
   };
@@ -217,7 +219,33 @@ export default function App() {
     <div className="min-h-screen bg-[#0A0F0D] text-zinc-100 flex flex-col font-sans">
       {/* Main View Container */}
       <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 sm:pt-6">
-        {currentTab === 'home' && (
+        {/* Full-screen detail views */}
+        {detailView === 'weight' && (
+          <WeightView
+            state={state}
+            onLogWeight={handleLogWeight}
+            onOpenQuickLog={() => handleOpenQuickLog('weight')}
+            onBack={() => setDetailView(null)}
+            onSelectTab={(tab) => {
+              setDetailView(null);
+              setCurrentTab(tab);
+            }}
+            onDateChange={handleDateChange}
+          />
+        )}
+
+        {detailView === 'sleep' && (
+          <SleepView
+            state={state}
+            onBack={() => setDetailView(null)}
+            onOpenQuickLog={() => handleOpenQuickLog('sleep')}
+            onOpenSleepModal={() => handleOpenQuickLog('sleep')}
+            onDateChange={handleDateChange}
+          />
+        )}
+
+        {/* Regular Tab Views */}
+        {!detailView && currentTab === 'home' && (
           <HomeView
             state={state}
             onSelectTab={setCurrentTab}
@@ -228,10 +256,12 @@ export default function App() {
             onUpdateSleep={handleUpdateSleep}
             onLogWeight={handleLogWeight}
             onClearWeight={handleClearWeight}
+            onOpenWeightPage={() => setDetailView('weight')}
+            onOpenSleepPage={() => setDetailView('sleep')}
           />
         )}
 
-        {currentTab === 'steps' && (
+        {!detailView && currentTab === 'steps' && (
           <StepsView
             state={state}
             onUpdateSteps={handleUpdateSteps}
@@ -240,7 +270,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'workout' && (
+        {!detailView && currentTab === 'workout' && (
           <WorkoutView
             state={state}
             onAddWorkout={handleAddWorkout}
@@ -250,7 +280,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'meals' && (
+        {!detailView && currentTab === 'meals' && (
           <MealsView
             state={state}
             onAddMeal={handleAddMeal}
@@ -260,7 +290,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'calories' && (
+        {!detailView && currentTab === 'calories' && (
           <CaloriesView
             state={state}
             onSelectTab={setCurrentTab}
@@ -268,24 +298,25 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'weight' && (
+        {!detailView && currentTab === 'weight' && (
           <WeightView
             state={state}
             onLogWeight={handleLogWeight}
             onOpenQuickLog={() => handleOpenQuickLog('weight')}
+            onBack={() => setCurrentTab('home')}
             onSelectTab={setCurrentTab}
             onDateChange={handleDateChange}
           />
         )}
 
-        {currentTab === 'history' && (
+        {!detailView && currentTab === 'history' && (
           <HistoryView
             state={state}
             onDateChange={handleDateChange}
           />
         )}
 
-        {currentTab === 'settings' && (
+        {!detailView && currentTab === 'settings' && (
           <SettingsView
             state={state}
             onUpdateProfile={handleUpdateProfile}
@@ -300,7 +331,10 @@ export default function App() {
       {/* Bottom Floating Navigation Bar */}
       <BottomNav
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={(tab) => {
+          setDetailView(null);
+          setCurrentTab(tab);
+        }}
       />
 
       {/* Modals */}
@@ -322,10 +356,12 @@ export default function App() {
         activeDate={activeDate}
         profile={profile}
         currentSteps={currentDay.steps || 0}
+        currentSleep={currentDay.sleep}
         onSaveSteps={(st, note) => handleUpdateSteps(activeDate, st, note)}
         onAddMeal={handleAddMeal}
         onAddWorkout={handleAddWorkout}
         onLogWeight={handleLogWeight}
+        onSaveSleep={(sleep) => handleUpdateSleep(activeDate, sleep)}
         defaultTab={quickLogDefaultTab}
       />
     </div>

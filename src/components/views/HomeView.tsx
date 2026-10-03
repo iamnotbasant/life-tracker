@@ -13,6 +13,7 @@ import {
   Salad,
   Cookie,
   Soup,
+  Plus,
 } from 'lucide-react';
 import { AppState, TabType, MealType, SleepData } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
@@ -24,13 +25,15 @@ import { DateNavigator } from '../DateNavigator';
 interface HomeViewProps {
   state: AppState;
   onSelectTab: (tab: TabType) => void;
-  onOpenQuickLog?: (tab?: 'steps' | 'meal' | 'workout' | 'weight') => void;
+  onOpenQuickLog?: (tab?: 'steps' | 'meal' | 'workout' | 'weight' | 'sleep') => void;
   onOpenPointsInfo: () => void;
   streak: number;
   onDateChange?: (newDate: string) => void;
   onUpdateSleep?: (dateStr: string, sleep?: SleepData) => void;
   onLogWeight?: (weight: number, dateStr?: string) => void;
   onClearWeight?: (dateStr: string) => void;
+  onOpenWeightPage?: () => void;
+  onOpenSleepPage?: () => void;
 }
 
 const mealIcons: Record<MealType, React.ElementType> = {
@@ -43,12 +46,15 @@ const mealIcons: Record<MealType, React.ElementType> = {
 export const HomeView: React.FC<HomeViewProps> = ({
   state,
   onSelectTab,
+  onOpenQuickLog,
   onOpenPointsInfo,
   streak,
   onDateChange,
   onUpdateSleep,
   onLogWeight,
   onClearWeight,
+  onOpenWeightPage,
+  onOpenSleepPage,
 }) => {
   const { profile, activeDate, days } = state;
   const day = days[activeDate] || {
@@ -220,18 +226,27 @@ export const HomeView: React.FC<HomeViewProps> = ({
           CARD 1: Points Card (Glowing Redesign)
           Dark card with emerald glow background, faint bars, dynamic "+22",
           "−14 total", flame in glowing emerald circle, "Guide →" pill,
-          and subtle mini bar sparkline.
+          and subtle mini bar sparkline. Big number is WHITE.
          ───────────────────────────────────────────────────────────── */}
       <div
         onClick={onOpenPointsInfo}
-        className="relative overflow-hidden rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group border border-[#22C55E]/30 bg-[#0E1512]"
+        className="relative overflow-hidden rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group border border-[#22C55E]/30 bg-[#0A0F0D]"
         style={{
-          backgroundImage: "url('/points-card-bg.png')",
+          backgroundColor: '#0A0F0D',
+          backgroundImage: "url('/points-card-bg.webp'), radial-gradient(ellipse at 15% 50%, rgba(34, 197, 94, 0.35) 0%, rgba(10, 15, 13, 0.95) 70%, #0A0F0D 100%)",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           boxShadow: '0 0 24px rgba(34, 197, 94, 0.25)',
         }}
       >
+        {/* CSS emerald radial-gradient fallback BEHIND image */}
+        <div
+          className="absolute inset-0 pointer-events-none -z-0 opacity-80"
+          style={{
+            background: 'radial-gradient(ellipse at 15% 50%, rgba(34, 197, 94, 0.35) 0%, rgba(10, 15, 13, 0.95) 60%, #0A0F0D 100%)',
+          }}
+        />
+
         <div className="relative z-10">
           {/* Top row: Label + Guide pill */}
           <div className="flex items-center justify-between">
@@ -244,7 +259,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {/* Middle/Main row: big number + caption on left, flame circle + sparkline on right */}
           <div className="flex items-end justify-between mt-2">
             <div>
-              <div className="text-5xl font-black text-[#22C55E] tracking-tight drop-shadow-[0_2px_12px_rgba(34,197,94,0.4)]">
+              <div className="text-5xl font-black text-white tracking-tight drop-shadow-[0_2px_12px_rgba(34,197,94,0.4)]">
                 {day.points >= 0 ? `+${day.points}` : `−${Math.abs(day.points)}`}
               </div>
               <div className="text-[11px] text-zinc-400 font-medium mt-1">
@@ -285,10 +300,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
           CARD 2: Sleep Card
           Compact card: small label "Sleep", big value "8h" (or "—"),
           caption with the range e.g. "11:30 PM → 7:30 AM" or empty hint.
-          Moon Lucide icon. Tapping opens SleepModal.
+          Moon Lucide icon. Tapping opens Sleep page (or SleepModal).
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => setIsSleepModalOpen(true)}
+        onClick={() => {
+          if (onOpenSleepPage) {
+            onOpenSleepPage();
+          } else {
+            setIsSleepModalOpen(true);
+          }
+        }}
         className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
         <div className="flex items-center justify-between">
@@ -539,10 +560,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
           CARD 7: Weight Card (NEW at the END of card order)
           Display-only card: big value = current weight from weightHistory (latest entry),
           small muted caption = change vs previous entry.
-          NO points UI. Tapping opens WeightModal.
+          Tapping opens Weight page (or WeightModal).
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => setIsWeightModalOpen(true)}
+        onClick={() => {
+          if (onOpenWeightPage) {
+            onOpenWeightPage();
+          } else {
+            setIsWeightModalOpen(true);
+          }
+        }}
         className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
         <div className="flex items-center justify-between">
@@ -555,6 +582,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="text-[11px] text-zinc-500 font-medium">
           {weightCaption}
         </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          FLOATING ACTION BUTTON (FAB): Emerald "+" above bottom nav
+         ───────────────────────────────────────────────────────────── */}
+      <div className="fixed bottom-20 right-4 sm:right-[calc(50%-13rem)] z-40">
+        <button
+          type="button"
+          onClick={() => (onOpenQuickLog ? onOpenQuickLog('meal') : undefined)}
+          className="w-14 h-14 rounded-full bg-[#22C55E] text-black shadow-[0_4px_24px_rgba(34,197,94,0.45)] hover:bg-[#16A34A] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-[#22C55E]/40"
+          title="Quick Add"
+          aria-label="Quick Add"
+        >
+          <Plus className="w-7 h-7 stroke-[2.8]" />
+        </button>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────

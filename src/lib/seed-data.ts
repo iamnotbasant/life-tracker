@@ -56,20 +56,8 @@ export function getInitialSeedData(): AppState {
         protein: 17.5,
       },
     ],
-    walks: [
-      {
-        id: 'seed-walk-1',
-        title: 'Campus Stroll',
-        time: '18:30',
-        distanceKm: 1.2,
-        durationMin: 20,
-        steps: 1697,
-        calories: 73,
-        avgBpm: 92,
-      },
-    ],
+    walks: [],
     workouts: [],
-    weight: 48.9,
     points: -13,
     pointsBreakdown: {
       caloriesPts: -8,
