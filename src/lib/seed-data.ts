@@ -9,7 +9,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   gender: 'male',
   activityLevel: 'moderate',
   goal: 'weight_gain',
-  calorieGoalMaintain: 2300,
+  calorieGoalMaintain: 2350,
   calorieGoalGain: 2700,
   proteinGoalMin: 85,
   proteinGoalMax: 100,

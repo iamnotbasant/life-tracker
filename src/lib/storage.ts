@@ -145,6 +145,11 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
     state.profile.calorieGoalGain = 2700;
     changed = true;
   }
+  // Maintenance calories corrected 2300 -> 2350 (only when still on the old default).
+  if (state.profile.calorieGoalMaintain === 2300) {
+    state.profile.calorieGoalMaintain = 2350;
+    changed = true;
+  }
 
   // Drop phantom day.weight values that have no matching weightHistory entry.
   // (handleLogWeight is the only writer of day.weight and always writes a

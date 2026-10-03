@@ -13,12 +13,8 @@ import {
   Cookie,
   Soup,
   Plus,
-  TrendingUp,
-  TrendingDown,
-  Minus,
 } from 'lucide-react';
 import { AppState, TabType, MealType, SleepData } from '../../lib/types';
-import { calculateBMR, estimateStepsCalories } from '../../lib/points';
 import { formatDateLabel, formatTime12h, calculateSleepHours, timeRangeLabel, cn } from '../../lib/utils';
 import { SleepModal } from '../SleepModal';
 import { WeightModal } from '../WeightModal';
@@ -75,22 +71,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const steps = day.steps || 0;
   const stepsGoal = profile.stepsGoal || 10000;
   const stepsPercent = Math.min(Math.round((steps / stepsGoal) * 100), 100);
-  const stepsBurned = estimateStepsCalories(steps, profile.stepCalorieFactor);
 
   const workouts = day.workouts || [];
-  const workoutBurned = workouts.reduce((sum, w) => sum + (w.calories || 0), 0);
   const totalWorkoutMin = workouts.reduce((sum, w) => sum + (w.durationMin || 0), 0);
   const totalExercises = workouts.reduce((sum, w) => sum + (w.exercises?.length || 0), 0);
-  const bmr = calculateBMR(profile.weightKg, profile.heightCm, profile.age, profile.gender);
-  const totalBurned = bmr + stepsBurned + workoutBurned;
 
   const meals = day.meals || [];
   const totalKcal = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
   const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
 
-  const netKcal = totalKcal - totalBurned;
   const targetKcal = profile.calorieGoalGain || 2700;
+  const maintenanceKcal = profile.calorieGoalMaintain || 2350;
   const caloriePercent = Math.min(Math.round((totalKcal / targetKcal) * 100), 100);
+  // Bar color vs maintenance: below (red) / in zone ±100 (yellow) / above (green)
+  const calorieBarColor =
+    totalKcal < maintenanceKcal - 100
+      ? 'bg-rose-500'
+      : totalKcal > maintenanceKcal + 100
+        ? 'bg-[#22C55E]'
+        : 'bg-amber-400';
 
   // Sleep info for active date
   const sleep = day.sleep;
@@ -357,10 +356,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="text-4xl font-black text-white tracking-tight my-1">
           {totalKcal.toLocaleString()} <span className="text-lg font-normal text-zinc-500">/ {targetKcal.toLocaleString()} kcal</span>
         </div>
-        {/* Daily goal progress bar (merged from Calories card) */}
+        {/* Daily goal progress bar — color vs maintenance (2350): red below / yellow in zone / green above */}
         <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] my-2">
           <div
-            className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
+            className={`h-full ${calorieBarColor} rounded-full transition-all duration-500`}
             style={{ width: `${caloriePercent}%` }}
           />
         </div>
@@ -401,36 +400,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   );
                 })}
               </div>
-
-              {/* TOTAL footer row with more top margin so it feels separated */}
-              <div className="pt-3.5 mt-3 border-t border-white/[0.08] flex items-center justify-between text-xs font-semibold">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">TOTAL</span>
-                <span className="text-white font-bold">{totalKcal.toLocaleString()} kcal · {totalProtein}g protein</span>
-              </div>
             </div>
           )}
-        </div>
-
-        {/* Net + weight-gain verdict (burn math stays internal, not shown) */}
-        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
-          <span className="text-sm font-black text-white tabular-nums">
-            Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
-          </span>
-          {(() => {
-            const verdict =
-              netKcal >= 200
-                ? { label: 'Surplus · Gaining', Icon: TrendingUp, cls: 'text-[#22C55E] bg-[#22C55E]/10 border-[#22C55E]/25' }
-                : netKcal <= -200
-                  ? { label: 'Deficit · Losing', Icon: TrendingDown, cls: 'text-rose-400 bg-rose-500/10 border-rose-500/25' }
-                  : { label: 'Maintaining', Icon: Minus, cls: 'text-amber-300 bg-amber-500/10 border-amber-500/25' };
-            const VIcon = verdict.Icon;
-            return (
-              <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${verdict.cls}`}>
-                <VIcon className="w-3 h-3" />
-                {verdict.label}
-              </span>
-            );
-          })()}
         </div>
       </div>
 
