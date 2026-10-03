@@ -343,39 +343,125 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
   return { state: changed ? { ...state, days, weightHistory } : state, changed };
 }
 
-export function loadAppState(): AppState {
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingState: AppState | null = null;
+
+export async function saveStateToApi(state: AppState): Promise<boolean> {
+  try {
+    const res = await fetch('/api/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: state.profile,
+        days: state.days,
+        weightHistory: state.weightHistory,
+      }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to save state to backend API:', err);
+    return false;
+  }
+}
+
+export function saveAppState(state: AppState): void {
+  pendingState = state;
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+  }
+  debounceTimer = setTimeout(async () => {
+    if (pendingState) {
+      const stateToSave = pendingState;
+      await saveStateToApi(stateToSave);
+    }
+  }, 800);
+}
+
+// Flush pending state if user navigates away
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (pendingState) {
+      fetch('/api/state', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile: pendingState.profile,
+          days: pendingState.days,
+          weightHistory: pendingState.weightHistory,
+        }),
+        keepalive: true,
+      });
+    }
+  });
+}
+
+export async function loadAppState(): Promise<AppState> {
   if (typeof window === 'undefined') {
     return getInitialSeedData();
   }
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
+    const res = await fetch('/api/state');
+    if (!res.ok) {
+      throw new Error(`Failed to fetch state: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    // Case 1: Database is empty -> migrate from localStorage if present, else seed
+    if (data.isEmpty || !data.profile) {
+      const rawLocal = localStorage.getItem(STORAGE_KEY);
+      if (rawLocal) {
+        try {
+          const parsed = JSON.parse(rawLocal) as AppState;
+          if (parsed && parsed.profile && parsed.days) {
+            const { state: migrated } = migrateFabricatedSeed(parsed);
+            await saveStateToApi(migrated);
+            localStorage.removeItem(STORAGE_KEY);
+            return migrated;
+          }
+        } catch (e) {
+          console.error('Failed to parse localStorage data for migration:', e);
+        }
+      }
+
+      // No localStorage data: initialize seed data into Postgres
       const initial = getInitialSeedData();
-      saveAppState(initial);
+      await saveStateToApi(initial);
+      localStorage.removeItem(STORAGE_KEY);
       return initial;
     }
-    const parsed = JSON.parse(raw) as AppState;
-    if (!parsed.days || !parsed.profile) {
-      const initial = getInitialSeedData();
-      saveAppState(initial);
-      return initial;
+
+    // Case 2: Database has data
+    const activeDate = getInitialSeedData().activeDate;
+    const currentState: AppState = {
+      profile: data.profile,
+      days: data.days || {},
+      weightHistory: data.weightHistory || [],
+      activeDate,
+      onboardingCompleted: true,
+    };
+
+    const { state: migrated, changed } = migrateFabricatedSeed(currentState);
+    if (changed) {
+      await saveStateToApi(migrated);
     }
-    const { state: migrated, changed } = migrateFabricatedSeed(parsed);
-    if (changed) saveAppState(migrated);
+
+    // Clear legacy localStorage key to ensure data lives server-side
+    localStorage.removeItem(STORAGE_KEY);
+
     return migrated;
   } catch (err) {
-    console.error('Error loading app state from localStorage:', err);
+    console.error('Error loading app state from API:', err);
+    // Fallback if network or DB error
+    const rawLocal = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    if (rawLocal) {
+      try {
+        const parsed = JSON.parse(rawLocal) as AppState;
+        return parsed;
+      } catch {}
+    }
     return getInitialSeedData();
-  }
-}
-
-export function saveAppState(state: AppState): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (err) {
-    console.error('Error saving app state to localStorage:', err);
   }
 }
 

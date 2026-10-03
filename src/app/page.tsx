@@ -16,8 +16,10 @@ import { MealsView } from '../components/views/MealsView';
 import { WeightView } from '../components/views/WeightView';
 import { SleepView } from '../components/views/SleepView';
 import { SettingsView } from '../components/views/SettingsView';
+import { LoginScreen } from '../components/LoginScreen';
 
 export default function App() {
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
   const [state, setState] = useState<AppState | null>(null);
   const [currentTab, setCurrentTab] = useState<TabType>('home');
   const [detailView, setDetailView] = useState<'weight' | 'sleep' | null>(null);
@@ -26,21 +28,76 @@ export default function App() {
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [quickLogDefaultTab, setQuickLogDefaultTab] = useState<QuickLogTab>('meal');
 
-  // Load state on client mount
+  // Verify auth session on mount and load state if authenticated
   useEffect(() => {
-    const loaded = loadAppState();
-    setState(loaded);
-    if (!loaded.onboardingCompleted) {
-      setIsOnboardingOpen(true);
+    async function checkAuthAndLoad() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json().catch(() => ({ authenticated: false }));
+        if (data.authenticated) {
+          setAuthStatus('authenticated');
+          const loaded = await loadAppState();
+          setState(loaded);
+          if (!loaded.onboardingCompleted) {
+            setIsOnboardingOpen(true);
+          }
+        } else {
+          setAuthStatus('unauthenticated');
+        }
+      } catch (err) {
+        console.error('Failed to verify session:', err);
+        setAuthStatus('unauthenticated');
+      }
     }
+    checkAuthAndLoad();
   }, []);
 
-  // Save state on any change
+  const handleLoginSuccess = async () => {
+    setAuthStatus('authenticated');
+    try {
+      const loaded = await loadAppState();
+      setState(loaded);
+      if (!loaded.onboardingCompleted) {
+        setIsOnboardingOpen(true);
+      }
+    } catch (err) {
+      console.error('Failed to load state after login:', err);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    setAuthStatus('unauthenticated');
+    setState(null);
+  };
+
+  // Save state on any change (debounced in storage.ts)
   useEffect(() => {
-    if (state) {
+    if (state && authStatus === 'authenticated') {
       saveAppState(state);
     }
-  }, [state]);
+  }, [state, authStatus]);
+
+  if (authStatus === 'checking') {
+    return (
+      <div className="min-h-screen bg-[#0A0F0D] flex items-center justify-center text-zinc-400">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Checking session...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'unauthenticated') {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   if (!state) {
     return (
@@ -317,6 +374,7 @@ export default function App() {
             onSelectTab={setCurrentTab}
             onReplayOnboarding={() => setIsOnboardingOpen(true)}
             onOpenPointsInfo={() => setIsPointsInfoOpen(true)}
+            onLogout={handleLogout}
           />
         )}
       </main>

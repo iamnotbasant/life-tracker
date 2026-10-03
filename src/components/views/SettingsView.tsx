@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
 import { AppState, TabType, UserProfile } from '../../lib/types';
 import { exportBackupJSON, parseAndImportBackupJSON } from '../../lib/storage';
@@ -25,6 +26,7 @@ interface SettingsViewProps {
   onSelectTab: (tab: TabType) => void;
   onReplayOnboarding: () => void;
   onOpenPointsInfo: () => void;
+  onLogout?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -34,6 +36,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSelectTab,
   onReplayOnboarding,
   onOpenPointsInfo,
+  onLogout,
 }) => {
   const [profile, setProfile] = useState<UserProfile>({ ...state.profile });
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -418,6 +421,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          CARD 5: Account & Security (Session / Log Out)
+         ───────────────────────────────────────────────────────────── */}
+      {onLogout && (
+        <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">
+            Account & Security
+          </h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-white">Active Session</div>
+              <div className="text-[10px] text-zinc-500">Connected to Postgres backend</div>
+            </div>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="py-2 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
