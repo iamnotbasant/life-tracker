@@ -140,6 +140,21 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
   let weightHistory = state.weightHistory.filter((w) => !FAKE_WEIGHT_NOTES.has(w.note || ''));
   if (weightHistory.length !== state.weightHistory.length) changed = true;
 
+  // Drop phantom day.weight values that have no matching weightHistory entry.
+  // (handleLogWeight is the only writer of day.weight and always writes a
+  // weightHistory entry alongside it, so a day.weight without one is stale.)
+  for (const [date, day] of Object.entries(days)) {
+    if (
+      day.weight !== undefined &&
+      !weightHistory.some((w) => w.date === date)
+    ) {
+      const cleaned = { ...day };
+      delete (cleaned as { weight?: number }).weight;
+      days[date] = cleaned;
+      changed = true;
+    }
+  }
+
   // Backfill honest MET-estimated calories on the two real seed workouts
   // (older browsers stored them with calories: 0).
   const SEED_WO_CALORIES: Record<string, number> = { 'seed-wo-1': 18, 'seed-wo-2': 29 };
