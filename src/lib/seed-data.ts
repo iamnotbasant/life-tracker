@@ -138,159 +138,19 @@ export function getInitialSeedData(): AppState {
     },
   };
 
-  // 2026-10-03 (Today)
+  // 2026-10-03 (today) — starts empty; the user logs their own data
   days['2026-10-03'] = {
     date: '2026-10-03',
-    steps: 6420,
-    sleep: {
-      sleepStart: '23:30',
-      sleepEnd: '07:30',
-      sleepHours: 8,
-    },
-    meals: [
-      {
-        id: 'seed-meal-6',
-        time: '08:45',
-        mealType: 'breakfast',
-        description: 'Oatmeal with banana, peanut butter & 350ml milk',
-        calories: 580,
-        protein: 26,
-      },
-      {
-        id: 'seed-meal-7',
-        time: '13:30',
-        mealType: 'lunch',
-        description: 'Paneer bhurji, 4 roti, dal tadka + curd',
-        calories: 920,
-        protein: 42,
-      },
-      {
-        id: 'seed-meal-8',
-        time: '17:30',
-        mealType: 'snack',
-        description: 'Sprouted moong chaat + roasted almonds',
-        calories: 340,
-        protein: 16,
-      },
-    ],
-    walks: [
-      {
-        id: 'seed-walk-today',
-        title: 'Morning Park Walk',
-        time: '07:45',
-        distanceKm: 3.5,
-        durationMin: 42,
-        steps: 4600,
-        calories: 198,
-        avgBpm: 98,
-        notes: 'Brisk fresh air walk',
-      },
-    ],
-    workouts: [
-      {
-        id: 'seed-workout-today',
-        name: 'Calisthenics Push & Dips',
-        type: 'calisthenics',
-        durationMin: 45,
-        calories: 220,
-        time: '18:00',
-        exercises: [
-          { name: 'Parallel Bar Dips', sets: 4, reps: 10, notes: 'Full depth' },
-          { name: 'Push-ups (Diamond & Normal)', sets: 4, reps: 15 },
-          { name: 'Pike Push-ups', sets: 3, reps: 8, notes: 'Handstand progression' },
-          { name: 'Hanging Leg Raises', sets: 3, reps: 12 },
-        ],
-        notes: 'Good form on dips, felt explosive',
-      },
-    ],
-    weight: 48.9,
-    points: 37,
-    pointsBreakdown: {
-      caloriesPts: 0,
-      proteinPts: 10,
-      stepsPts: 2,
-      workoutPts: 10,
-      sleepPts: 15,
-      weightPts: 5,
-      streakPts: 0,
-      total: 42,
-      notes: [
-        'Calories: 1840 kcal logged so far (on track for 2500)',
-        'Protein: 84g logged (+10 pts)',
-        'Steps: 6,420 (+2 pts)',
-        'Workout: Calisthenics Push (45m) (+10 pts)',
-        'Sleep: 8h asleep by 23:30 (+15 pts)',
-        'Weight: 48.9 kg logged (+5 pts)',
-      ],
-    },
+    steps: 0,
+    meals: [],
+    walks: [],
+    workouts: [],
+    points: 0,
   };
 
-  // Also pre-seed a couple of past historical days so the yearly heatmaps have historical depth
-  const pastSeedDates = [
-    { date: '2026-09-30', steps: 8400, kcal: 2380, protein: 88, workout: true },
-    { date: '2026-09-29', steps: 10250, kcal: 2510, protein: 92, workout: true },
-    { date: '2026-09-28', steps: 7200, kcal: 2290, protein: 82, workout: false },
-    { date: '2026-09-27', steps: 11100, kcal: 2580, protein: 96, workout: true },
-    { date: '2026-09-26', steps: 9400, kcal: 2420, protein: 87, workout: true },
-    { date: '2026-09-25', steps: 6100, kcal: 2150, protein: 74, workout: false },
-    { date: '2026-09-24', steps: 10400, kcal: 2490, protein: 90, workout: true },
-    { date: '2026-09-23', steps: 8900, kcal: 2340, protein: 86, workout: true },
-    { date: '2026-09-22', steps: 7800, kcal: 2260, protein: 80, workout: false },
-    { date: '2026-09-21', steps: 10800, kcal: 2520, protein: 94, workout: true },
-    { date: '2026-09-20', steps: 9100, kcal: 2410, protein: 85, workout: true },
-    { date: '2026-09-19', steps: 5800, kcal: 2100, protein: 70, workout: false },
-    { date: '2026-09-18', steps: 10200, kcal: 2500, protein: 91, workout: true },
-  ];
-
-  for (const s of pastSeedDates) {
-    days[s.date] = {
-      date: s.date,
-      steps: s.steps,
-      sleep: { sleepHours: 7.5, sleepStart: '23:30', sleepEnd: '07:00' },
-      meals: [
-        {
-          id: `seed-meal-hist-${s.date}`,
-          mealType: 'lunch',
-          description: 'Daily balanced meals & shakes',
-          calories: s.kcal,
-          protein: s.protein,
-          time: '13:00',
-        },
-      ],
-      walks: [
-        {
-          id: `seed-walk-hist-${s.date}`,
-          title: 'Daily Walk',
-          time: '18:00',
-          distanceKm: +(s.steps * 0.00075).toFixed(2),
-          durationMin: Math.round(s.steps / 95),
-          steps: s.steps,
-          calories: Math.round(s.steps * 0.043),
-        },
-      ],
-      workouts: s.workout
-        ? [
-            {
-              id: `seed-wo-hist-${s.date}`,
-              name: 'Calisthenics Training',
-              type: 'calisthenics',
-              durationMin: 45,
-              calories: 220,
-              time: '17:30',
-              exercises: [{ name: 'Pull-ups / Dips / Core', sets: 4, reps: 10 }],
-            },
-          ]
-        : [],
-      points: s.workout && s.steps >= 10000 && s.protein >= 85 ? 40 : 25,
-    };
-  }
-
+  // Only the user's real measured entry — no fabricated history
   const weightHistory: WeightEntry[] = [
-    { id: 'w-1', date: '2026-09-15', weightKg: 48.2, note: 'Starting tracker baseline' },
-    { id: 'w-2', date: '2026-09-22', weightKg: 48.5, note: 'Gaining steady lean mass' },
-    { id: 'w-3', date: '2026-09-29', weightKg: 48.8, note: 'Calisthenics strength up' },
-    { id: 'w-4', date: '2026-10-01', weightKg: 48.9, note: 'Consistency in surplus' },
-    { id: 'w-5', date: '2026-10-03', weightKg: 48.9, note: 'Current target check' },
+    { id: 'w-1', date: '2026-10-02', weightKg: 48.9, note: 'Measured' },
   ];
 
   return {
