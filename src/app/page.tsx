@@ -13,7 +13,6 @@ import { HomeView } from '../components/views/HomeView';
 import { StepsView } from '../components/views/StepsView';
 import { WorkoutView } from '../components/views/WorkoutView';
 import { MealsView } from '../components/views/MealsView';
-import { CaloriesView } from '../components/views/CaloriesView';
 import { WeightView } from '../components/views/WeightView';
 import { SleepView } from '../components/views/SleepView';
 import { SettingsView } from '../components/views/SettingsView';
@@ -285,14 +284,6 @@ export default function App() {
             onAddMeal={handleAddMeal}
             onDeleteMeal={handleDeleteMeal}
             onOpenQuickLog={() => handleOpenQuickLog('meal')}
-            onDateChange={handleDateChange}
-          />
-        )}
-
-        {!detailView && currentTab === 'calories' && (
-          <CaloriesView
-            state={state}
-            onSelectTab={setCurrentTab}
             onDateChange={handleDateChange}
           />
         )}

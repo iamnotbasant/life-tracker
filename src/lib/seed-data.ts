@@ -10,7 +10,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   activityLevel: 'moderate',
   goal: 'weight_gain',
   calorieGoalMaintain: 2300,
-  calorieGoalGain: 2500,
+  calorieGoalGain: 2700,
   proteinGoalMin: 85,
   proteinGoalMax: 100,
   stepsGoal: 10000,

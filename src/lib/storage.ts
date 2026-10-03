@@ -140,6 +140,12 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
   let weightHistory = state.weightHistory.filter((w) => !FAKE_WEIGHT_NOTES.has(w.note || ''));
   if (weightHistory.length !== state.weightHistory.length) changed = true;
 
+  // Daily calorie goal bumped 2500 -> 2700 (only when still on the old default).
+  if (state.profile.calorieGoalGain === 2500) {
+    state.profile.calorieGoalGain = 2700;
+    changed = true;
+  }
+
   // Drop phantom day.weight values that have no matching weightHistory entry.
   // (handleLogWeight is the only writer of day.weight and always writes a
   // weightHistory entry alongside it, so a day.weight without one is stale.)

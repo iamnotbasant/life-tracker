@@ -6,7 +6,6 @@ import {
   Footprints,
   Dumbbell,
   UtensilsCrossed,
-  Zap,
   Moon,
   Scale,
   Coffee,
@@ -80,6 +79,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const workouts = day.workouts || [];
   const workoutBurned = workouts.reduce((sum, w) => sum + (w.calories || 0), 0);
+  const totalWorkoutMin = workouts.reduce((sum, w) => sum + (w.durationMin || 0), 0);
+  const totalExercises = workouts.reduce((sum, w) => sum + (w.exercises?.length || 0), 0);
   const bmr = calculateBMR(profile.weightKg, profile.heightCm, profile.age, profile.gender);
   const totalBurned = bmr + stepsBurned + workoutBurned;
 
@@ -88,7 +89,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
 
   const netKcal = totalKcal - totalBurned;
-  const targetKcal = profile.calorieGoalGain || 2500;
+  const targetKcal = profile.calorieGoalGain || 2700;
   const caloriePercent = Math.min(Math.round((totalKcal / targetKcal) * 100), 100);
 
   // Sleep info for active date
@@ -308,71 +309,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 3: Calories Card
-          "1,240 / 2,500 kcal" + green progress bar + NET row directly beneath
-         ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => onSelectTab('calories')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Calories</span>
-          <Zap className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-        </div>
-        <div className="text-3xl font-black text-white tracking-tight my-1.5">
-          {totalKcal.toLocaleString()} <span className="text-zinc-500 text-lg font-normal">/ {targetKcal.toLocaleString()} kcal</span>
-        </div>
-        {/* Emerald green bar */}
-        <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] my-2">
-          <div
-            className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
-            style={{ width: `${caloriePercent}%` }}
-          />
-        </div>
-        {/* Calorie math: Food − Base − Steps − Workout */}
-        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] space-y-1.5">
-          {[
-            { icon: UtensilsCrossed, label: 'Food', value: `+${totalKcal.toLocaleString()}` },
-            { icon: Flame, label: 'Base', value: `−${Math.round(bmr).toLocaleString()}` },
-            { icon: Footprints, label: 'Steps', value: `−${Math.round(stepsBurned).toLocaleString()}` },
-            { icon: Dumbbell, label: 'Workout', value: `−${Math.round(workoutBurned).toLocaleString()}` },
-          ].map((row) => {
-            const RowIcon = row.icon;
-            return (
-              <div key={row.label} className="flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
-                  <RowIcon className="w-3.5 h-3.5 text-zinc-500" />
-                  {row.label}
-                </span>
-                <span className="font-bold text-zinc-200 tabular-nums">{row.value}</span>
-              </div>
-            );
-          })}
-        </div>
-        {/* Net + weight-gain verdict */}
-        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
-          <span className="text-sm font-black text-white tabular-nums">
-            Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
-          </span>
-          {(() => {
-            const verdict =
-              netKcal >= 200
-                ? { label: 'Surplus · Gaining', Icon: TrendingUp, cls: 'text-[#22C55E] bg-[#22C55E]/10 border-[#22C55E]/25' }
-                : netKcal <= -200
-                  ? { label: 'Deficit · Losing', Icon: TrendingDown, cls: 'text-rose-400 bg-rose-500/10 border-rose-500/25' }
-                  : { label: 'Maintaining', Icon: Minus, cls: 'text-amber-300 bg-amber-500/10 border-amber-500/25' };
-            const VIcon = verdict.Icon;
-            return (
-              <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${verdict.cls}`}>
-                <VIcon className="w-3 h-3" />
-                {verdict.label}
-              </span>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
           CARD 4: Steps Card
           Big number + goal bar ("7,450 / 10,000") + compact 7-day mini strip
          ───────────────────────────────────────────────────────────── */}
@@ -419,7 +355,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <UtensilsCrossed className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
-          {totalKcal.toLocaleString()} <span className="text-lg font-normal text-zinc-500">kcal</span>
+          {totalKcal.toLocaleString()} <span className="text-lg font-normal text-zinc-500">/ {targetKcal.toLocaleString()} kcal</span>
+        </div>
+        {/* Daily goal progress bar (merged from Calories card) */}
+        <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] my-2">
+          <div
+            className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
+            style={{ width: `${caloriePercent}%` }}
+          />
         </div>
         <div className="text-[11px] text-zinc-500 font-medium">
           {totalProtein}g protein • {meals.length} logged
@@ -467,6 +410,28 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           )}
         </div>
+
+        {/* Net + weight-gain verdict (burn math stays internal, not shown) */}
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
+          <span className="text-sm font-black text-white tabular-nums">
+            Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
+          </span>
+          {(() => {
+            const verdict =
+              netKcal >= 200
+                ? { label: 'Surplus · Gaining', Icon: TrendingUp, cls: 'text-[#22C55E] bg-[#22C55E]/10 border-[#22C55E]/25' }
+                : netKcal <= -200
+                  ? { label: 'Deficit · Losing', Icon: TrendingDown, cls: 'text-rose-400 bg-rose-500/10 border-rose-500/25' }
+                  : { label: 'Maintaining', Icon: Minus, cls: 'text-amber-300 bg-amber-500/10 border-amber-500/25' };
+            const VIcon = verdict.Icon;
+            return (
+              <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${verdict.cls}`}>
+                <VIcon className="w-3 h-3" />
+                {verdict.label}
+              </span>
+            );
+          })()}
+        </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -482,10 +447,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <Dumbbell className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
-          {workoutBurned.toLocaleString()} <span className="text-lg font-normal text-zinc-500">kcal burned</span>
+          {totalWorkoutMin} <span className="text-lg font-normal text-zinc-500">min active</span>
         </div>
         <div className="text-[11px] text-zinc-500 font-medium">
-          {workouts.length > 0 ? `${workouts.length} session${workouts.length > 1 ? 's' : ''} logged` : '0 min active'}
+          {workouts.length > 0 ? `${workouts.length} session${workouts.length > 1 ? 's' : ''} · ${totalExercises} exercises` : 'No workouts logged yet'}
         </div>
 
         {/* Inline Workout List */}
@@ -509,7 +474,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         )}
                       </div>
                       <span className="text-xs font-bold text-white shrink-0">
-                        {w.durationMin}m · {w.calories} kcal
+                        {w.durationMin} min
                       </span>
                     </div>
                     {w.exercises && w.exercises.length > 0 && (
