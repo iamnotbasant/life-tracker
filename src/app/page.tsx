@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AppState, TabType, MealEntry, WorkoutEntry, UserProfile } from '../lib/types';
+import { AppState, TabType, MealEntry, WalkSession, WorkoutEntry, UserProfile } from '../lib/types';
 import { loadAppState, saveAppState } from '../lib/storage';
 import { calculateDayPoints } from '../lib/points';
 import { calculateStreak } from '../lib/utils';
@@ -11,6 +11,7 @@ import { PointsInfoModal } from '../components/PointsInfoModal';
 import { QuickLogModal } from '../components/QuickLogModal';
 import { HomeView } from '../components/views/HomeView';
 import { StepsView } from '../components/views/StepsView';
+import { WalkView } from '../components/views/WalkView';
 import { WorkoutView } from '../components/views/WorkoutView';
 import { MealsView } from '../components/views/MealsView';
 import { CaloriesView } from '../components/views/CaloriesView';
@@ -24,7 +25,7 @@ export default function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isPointsInfoOpen, setIsPointsInfoOpen] = useState(false);
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
-  const [quickLogDefaultTab, setQuickLogDefaultTab] = useState<'steps' | 'meal' | 'workout' | 'weight'>('steps');
+  const [quickLogDefaultTab, setQuickLogDefaultTab] = useState<'steps' | 'meal' | 'walk' | 'workout' | 'weight'>('steps');
 
   // Load state on client mount
   useEffect(() => {
@@ -122,6 +123,25 @@ export default function App() {
     }));
   };
 
+  const handleAddWalk = (walk: WalkSession) => {
+    updateDayData(activeDate, d => {
+      const newWalks = [...d.walks, walk];
+      const newSteps = Math.max(d.steps || 0, (d.steps || 0) + (walk.steps || 0));
+      return {
+        ...d,
+        walks: newWalks,
+        steps: newSteps,
+      };
+    });
+  };
+
+  const handleDeleteWalk = (walkId: string) => {
+    updateDayData(activeDate, d => ({
+      ...d,
+      walks: d.walks.filter(w => w.id !== walkId),
+    }));
+  };
+
   const handleAddWorkout = (workout: WorkoutEntry) => {
     updateDayData(activeDate, d => ({
       ...d,
@@ -176,7 +196,7 @@ export default function App() {
     setState(prev => (prev ? { ...prev, onboardingCompleted: true } : prev));
   };
 
-  const handleOpenQuickLog = (tab: 'steps' | 'meal' | 'workout' | 'weight' = 'steps') => {
+  const handleOpenQuickLog = (tab: 'steps' | 'meal' | 'walk' | 'workout' | 'weight' = 'steps') => {
     setQuickLogDefaultTab(tab);
     setIsQuickLogOpen(true);
   };
@@ -201,6 +221,16 @@ export default function App() {
             state={state}
             onUpdateSteps={handleUpdateSteps}
             onOpenQuickLog={() => handleOpenQuickLog('steps')}
+          />
+        )}
+
+        {currentTab === 'walk' && (
+          <WalkView
+            state={state}
+            onAddWalk={handleAddWalk}
+            onDeleteWalk={handleDeleteWalk}
+            onOpenQuickLog={() => handleOpenQuickLog('walk')}
+            onSelectTab={setCurrentTab}
           />
         )}
 
@@ -281,6 +311,7 @@ export default function App() {
         currentSteps={currentDay.steps || 0}
         onSaveSteps={(st, note) => handleUpdateSteps(activeDate, st, note)}
         onAddMeal={handleAddMeal}
+        onAddWalk={handleAddWalk}
         onAddWorkout={handleAddWorkout}
         onLogWeight={handleLogWeight}
         defaultTab={quickLogDefaultTab}
