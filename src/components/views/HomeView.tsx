@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { AppState, TabType, MealType, SleepData } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
-import { formatDateLabel, formatTime12h, calculateSleepHours, cn } from '../../lib/utils';
+import { formatDateLabel, formatTime12h, calculateSleepHours, timeRangeLabel, cn } from '../../lib/utils';
 import { SleepModal } from '../SleepModal';
 import { WeightModal } from '../WeightModal';
 import { DateNavigator } from '../DateNavigator';
@@ -471,7 +471,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ) : (
             <div className="divide-y divide-white/[0.06]">
               {workouts.map((w) => {
-                const exerciseNames = w.exercises?.map(e => e.name).filter(Boolean).join(', ');
                 return (
                   <div key={w.id} className="py-3.5 first:pt-1">
                     <div className="flex items-center justify-between gap-2">
@@ -481,7 +480,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         </span>
                         {w.time && (
                           <span className="text-[11px] text-zinc-500 shrink-0 font-normal">
-                            · {w.time}
+                            · {timeRangeLabel(w.time, w.durationMin)}
                           </span>
                         )}
                       </div>
@@ -489,10 +488,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         {w.durationMin}m · {w.calories} kcal
                       </span>
                     </div>
-                    {exerciseNames && (
-                      <p className="text-[13px] text-zinc-200 leading-relaxed mt-1.5 break-words">
-                        {exerciseNames}
-                      </p>
+                    {w.exercises && w.exercises.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {w.exercises.map((ex, idx) => (
+                          <div key={idx} className="flex items-center justify-between gap-2 text-[13px]">
+                            <span className="text-zinc-200 break-words min-w-0">
+                              {ex.name}
+                              {ex.notes && (
+                                <span className="text-zinc-500 text-[11px]"> · {ex.notes}</span>
+                              )}
+                            </span>
+                            <span className="text-zinc-400 font-semibold shrink-0 text-xs">
+                              {ex.sets ?? '–'} × {ex.reps ?? '–'}
+                              {ex.weight ? ` · ${ex.weight}` : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 );

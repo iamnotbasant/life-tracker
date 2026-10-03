@@ -3,7 +3,7 @@
 import React from 'react';
 import { Dumbbell, Plus, Trash2, SlidersHorizontal, Scale } from 'lucide-react';
 import { AppState, WorkoutEntry } from '../../lib/types';
-import { formatDateLabel } from '../../lib/utils';
+import { formatDateLabel, timeRangeLabel } from '../../lib/utils';
 import { DateNavigator } from '../DateNavigator';
 
 interface WorkoutViewProps {
@@ -232,7 +232,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                 <div>
                   <h4 className="text-sm font-bold text-white">{w.name}</h4>
                   <div className="text-[11px] text-zinc-500 mt-0.5">
-                    {w.durationMin}m • <span className="text-[#22C55E]">{w.calories} kcal</span>
+                    {w.time ? `${timeRangeLabel(w.time, w.durationMin)} • ` : ''}{w.durationMin}m • <span className="text-[#22C55E]">{w.calories} kcal</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -255,9 +255,18 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                   {w.exercises.map((ex, idx) => (
                     <div
                       key={idx}
-                      className="text-xs py-1 px-2.5 rounded-lg bg-[#18201C] text-zinc-300"
+                      className="flex items-center justify-between gap-2 text-xs py-1 px-2.5 rounded-lg bg-[#18201C]"
                     >
-                      {ex.name}
+                      <span className="text-zinc-300 break-words min-w-0">
+                        {ex.name}
+                        {ex.notes && (
+                          <span className="text-zinc-500 text-[10px]"> · {ex.notes}</span>
+                        )}
+                      </span>
+                      <span className="text-zinc-400 font-semibold shrink-0">
+                        {ex.sets ?? '–'} × {ex.reps ?? '–'}
+                        {ex.weight ? ` · ${ex.weight}` : ''}
+                      </span>
                     </div>
                   ))}
                 </div>

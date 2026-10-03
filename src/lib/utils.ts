@@ -74,6 +74,20 @@ export function formatTime12h(timeStr?: string): string {
   return `${h12}:${mFormatted} ${period}`;
 }
 
+// "18:21" + 5 min -> "6:21 PM → 6:26 PM"
+export function timeRangeLabel(start?: string, durationMin?: number): string {
+  if (!start) return '';
+  const [hStr, mStr] = start.split(':');
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr || '0', 10);
+  if (isNaN(h) || isNaN(m)) return formatTime12h(start);
+  const totalMin = h * 60 + m + (durationMin || 0);
+  const endH = Math.floor(totalMin / 60) % 24;
+  const endM = totalMin % 60;
+  const endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  return `${formatTime12h(start)} → ${formatTime12h(endStr)}`;
+}
+
 // Calculate sleep duration in hours from two "HH:MM" 24h times, handling overnight wrap
 export function calculateSleepHours(sleepStart: string, sleepEnd: string): number {
   if (!sleepStart || !sleepEnd) return 0;
