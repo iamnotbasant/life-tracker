@@ -14,6 +14,9 @@ import {
   Cookie,
   Soup,
   Plus,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from 'lucide-react';
 import { AppState, TabType, MealType, SleepData } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
@@ -326,22 +329,46 @@ export const HomeView: React.FC<HomeViewProps> = ({
             style={{ width: `${caloriePercent}%` }}
           />
         </div>
-        {/* Inline NET row directly beneath */}
+        {/* Calorie math: Food − Base − Steps − Workout */}
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] space-y-1.5">
+          {[
+            { icon: UtensilsCrossed, label: 'Food', value: `+${totalKcal.toLocaleString()}` },
+            { icon: Flame, label: 'Base', value: `−${Math.round(bmr).toLocaleString()}` },
+            { icon: Footprints, label: 'Steps', value: `−${Math.round(stepsBurned).toLocaleString()}` },
+            { icon: Dumbbell, label: 'Workout', value: `−${Math.round(workoutBurned).toLocaleString()}` },
+          ].map((row) => {
+            const RowIcon = row.icon;
+            return (
+              <div key={row.label} className="flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
+                  <RowIcon className="w-3.5 h-3.5 text-zinc-500" />
+                  {row.label}
+                </span>
+                <span className="font-bold text-zinc-200 tabular-nums">{row.value}</span>
+              </div>
+            );
+          })}
+        </div>
+        {/* Net + weight-gain verdict */}
         <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Flame className="w-3.5 h-3.5 text-[#22C55E]/80 shrink-0" />
-            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0">
-              <span className="text-xs font-semibold text-zinc-200">
-                Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
-              </span>
-              <span className="text-[11px] text-zinc-500">
-                · {totalBurned.toLocaleString()} burned
-              </span>
-            </div>
-          </div>
-          <span className="text-xs font-semibold text-zinc-400 shrink-0 ml-2">
-            {caloriePercent}%
+          <span className="text-sm font-black text-white tabular-nums">
+            Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
           </span>
+          {(() => {
+            const verdict =
+              netKcal >= 200
+                ? { label: 'Surplus · Gaining', Icon: TrendingUp, cls: 'text-[#22C55E] bg-[#22C55E]/10 border-[#22C55E]/25' }
+                : netKcal <= -200
+                  ? { label: 'Deficit · Losing', Icon: TrendingDown, cls: 'text-rose-400 bg-rose-500/10 border-rose-500/25' }
+                  : { label: 'Maintaining', Icon: Minus, cls: 'text-amber-300 bg-amber-500/10 border-amber-500/25' };
+            const VIcon = verdict.Icon;
+            return (
+              <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${verdict.cls}`}>
+                <VIcon className="w-3 h-3" />
+                {verdict.label}
+              </span>
+            );
+          })()}
         </div>
       </div>
 
