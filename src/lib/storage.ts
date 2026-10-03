@@ -4,6 +4,84 @@ import { calculateDayPoints } from './points';
 
 const STORAGE_KEY = 'life_tracker_app_state_v1';
 
+// ---------------------------------------------------------------------------
+// One-time cleanup for browsers that seeded from the v1 fabricated demo data
+// (fake "today" meals/workout/walk + invented Sep 18-30 history + invented
+// weight entries). Removes ONLY fabricated entries; user-logged entries
+// (m-/wo-/w- timestamp ids) and the real 1-2 Oct seed are untouched.
+// ---------------------------------------------------------------------------
+const FAKE_SEED_DATES: string[] = (() => {
+  const dates: string[] = [];
+  for (let d = 18; d <= 30; d++) dates.push(`2026-09-${d}`);
+  return dates;
+})();
+
+function isFakeSeedId(id: string): boolean {
+  return (
+    id === 'seed-meal-6' ||
+    id === 'seed-meal-7' ||
+    id === 'seed-meal-8' ||
+    id.startsWith('seed-meal-hist-') ||
+    id === 'seed-walk-today' ||
+    id.startsWith('seed-walk-hist-') ||
+    id === 'seed-workout-today' ||
+    id.startsWith('seed-wo-hist-')
+  );
+}
+
+const FAKE_WEIGHT_NOTES = new Set([
+  'Starting tracker baseline',
+  'Gaining steady lean mass',
+  'Calisthenics strength up',
+  'Consistency in surplus',
+  'Current target check',
+]);
+
+function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boolean } {
+  let changed = false;
+  const days: Record<string, DayData> = { ...state.days };
+
+  for (const [date, day] of Object.entries(days)) {
+    if (FAKE_SEED_DATES.includes(date)) {
+      delete days[date];
+      changed = true;
+      continue;
+    }
+    const meals = day.meals.filter((m) => !isFakeSeedId(m.id));
+    const walks = day.walks.filter((w) => !isFakeSeedId(w.id));
+    const workouts = day.workouts.filter((w) => !isFakeSeedId(w.id));
+    if (
+      meals.length !== day.meals.length ||
+      walks.length !== day.walks.length ||
+      workouts.length !== day.workouts.length
+    ) {
+      const cleaned: DayData = { ...day, meals, walks, workouts };
+      try {
+        const bd = calculateDayPoints(cleaned, state.profile);
+        cleaned.points = bd.total;
+        cleaned.pointsBreakdown = bd;
+      } catch {
+        /* keep existing points on failure */
+      }
+      days[date] = cleaned;
+      changed = true;
+    }
+  }
+
+  let weightHistory = state.weightHistory.filter((w) => !FAKE_WEIGHT_NOTES.has(w.note || ''));
+  if (weightHistory.length !== state.weightHistory.length) changed = true;
+  if (!weightHistory.some((w) => w.date === '2026-10-02')) {
+    weightHistory = [
+      ...weightHistory,
+      { id: 'w-1', date: '2026-10-02', weightKg: 48.9, note: 'Measured' },
+    ];
+    weightHistory.sort((a, b) => a.date.localeCompare(b.date));
+    changed = true;
+  }
+
+  return { state: changed ? { ...state, days, weightHistory } : state, changed };
+}
+
 export function loadAppState(): AppState {
   if (typeof window === 'undefined') {
     return getInitialSeedData();
@@ -22,7 +100,9 @@ export function loadAppState(): AppState {
       saveAppState(initial);
       return initial;
     }
-    return parsed;
+    const { state: migrated, changed } = migrateFabricatedSeed(parsed);
+    if (changed) saveAppState(migrated);
+    return migrated;
   } catch (err) {
     console.error('Error loading app state from localStorage:', err);
     return getInitialSeedData();
