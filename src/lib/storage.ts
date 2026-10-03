@@ -178,6 +178,48 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
       }
     }
   }
+  // Oct 2 meal corrections (user-confirmed 2026-10-03):
+  // - the "5 roti + 2 katori dal" logged as dinner was actually lunch (time unknown -> "--")
+  // - real dinner was "2 roti + thodi dal"
+  // - plus forgotten items: morning 1 laddu, 3 parathe + dahi, namkeen packet, biscuit packet
+  //   (snack label values analysed from his packet photos; packet sizes estimated)
+  const day2fix = days['2026-10-02'];
+  if (day2fix) {
+    const meals = [...(day2fix.meals || [])];
+    let mealsChanged = false;
+    const m5 = meals.find((m) => m.id === 'seed-meal-5');
+    if (m5 && m5.mealType === 'dinner') {
+      m5.mealType = 'lunch';
+      m5.time = '--';
+      mealsChanged = true;
+    }
+    const NEW_OCT2_MEALS = [
+      { id: 'seed-meal-6', time: '--', mealType: 'breakfast', description: '1 sooji laddu', calories: 158, protein: 1.8 },
+      { id: 'seed-meal-7', time: '--', mealType: 'lunch', description: '3 parathe + 1 katori dahi', calories: 590, protein: 15 },
+      { id: 'seed-meal-9', time: '--', mealType: 'snack', description: 'namkeen packet (~20g)', calories: 102, protein: 0.9 },
+      { id: 'seed-meal-10', time: '--', mealType: 'snack', description: 'Priyagold CNC biscuits (1 packet)', calories: 195, protein: 2.7 },
+      { id: 'seed-meal-8', time: '--', mealType: 'dinner', description: '2 roti + thodi dal', calories: 270, protein: 9 },
+    ] as const;
+    for (const nm of NEW_OCT2_MEALS) {
+      if (!meals.some((m) => m.id === nm.id)) {
+        meals.push({ ...nm });
+        mealsChanged = true;
+      }
+    }
+    if (mealsChanged) {
+      const updatedDay2 = { ...day2fix, meals };
+      try {
+        const bd = calculateDayPoints(updatedDay2, state.profile);
+        updatedDay2.points = bd.total;
+        updatedDay2.pointsBreakdown = bd;
+      } catch {
+        /* keep existing points on failure */
+      }
+      days['2026-10-02'] = updatedDay2;
+      changed = true;
+    }
+  }
+
   // Weight corrections (user-confirmed): 48.9 kg was logged on Oct 1 (not Oct 2);
   // today's (Oct 3) weight is 50.05 kg.
   const seedWeightEntry = weightHistory.find(
