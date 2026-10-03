@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Footprints, Utensils, Dumbbell, Footprints as WalkIcon, Scale } from 'lucide-react';
-import { MealEntry, MealType, WalkSession, WorkoutEntry, UserProfile } from '../lib/types';
+import { X, Footprints, Utensils, Dumbbell, Scale } from 'lucide-react';
+import { MealEntry, MealType, WorkoutEntry, UserProfile } from '../lib/types';
 import { estimateStepsCalories } from '../lib/points';
 
 interface QuickLogModalProps {
@@ -13,10 +13,9 @@ interface QuickLogModalProps {
   currentSteps: number;
   onSaveSteps: (steps: number, note?: string) => void;
   onAddMeal: (meal: MealEntry) => void;
-  onAddWalk: (walk: WalkSession) => void;
   onAddWorkout: (workout: WorkoutEntry) => void;
   onLogWeight: (weight: number, note?: string) => void;
-  defaultTab?: 'steps' | 'meal' | 'walk' | 'workout' | 'weight';
+  defaultTab?: 'steps' | 'meal' | 'workout' | 'weight';
 }
 
 export const QuickLogModal: React.FC<QuickLogModalProps> = ({
@@ -27,12 +26,11 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
   currentSteps,
   onSaveSteps,
   onAddMeal,
-  onAddWalk,
   onAddWorkout,
   onLogWeight,
   defaultTab = 'steps',
 }) => {
-  const [activeTab, setActiveTab] = useState<'steps' | 'meal' | 'walk' | 'workout' | 'weight'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'steps' | 'meal' | 'workout' | 'weight'>(defaultTab);
 
   // Steps state
   const [stepInput, setStepInput] = useState<number>(currentSteps || 0);
@@ -44,13 +42,6 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
   const [mealKcal, setMealKcal] = useState<string>('500');
   const [mealProtein, setMealProtein] = useState<string>('25');
   const [mealTime, setMealTime] = useState('13:00');
-
-  // Walk state
-  const [walkTitle, setWalkTitle] = useState('Campus Walk');
-  const [walkDist, setWalkDist] = useState('2.5');
-  const [walkDur, setWalkDur] = useState('30');
-  const [walkSteps, setWalkSteps] = useState('3200');
-  const [walkBpm, setWalkBpm] = useState('95');
 
   // Workout state
   const [woName, setWoName] = useState('Calisthenics Session');
@@ -87,23 +78,6 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
     onClose();
   };
 
-  const handleAddWalk = (e: React.FormEvent) => {
-    e.preventDefault();
-    const stepsCount = Number(walkSteps) || 0;
-    const burned = estimateStepsCalories(stepsCount, profile.stepCalorieFactor);
-    const newWalk: WalkSession = {
-      id: `walk-${Date.now()}`,
-      title: walkTitle || 'Daily Walk',
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-      distanceKm: Number(walkDist) || 0,
-      durationMin: Number(walkDur) || 0,
-      steps: stepsCount,
-      calories: burned,
-      avgBpm: Number(walkBpm) || undefined,
-    };
-    onAddWalk(newWalk);
-    onClose();
-  };
 
   const handleAddWorkout = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +128,6 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
           {[
             { id: 'steps', label: 'Steps', icon: Footprints },
             { id: 'meal', label: 'Meal', icon: Utensils },
-            { id: 'walk', label: 'Walk', icon: WalkIcon },
             { id: 'workout', label: 'Workout', icon: Dumbbell },
             { id: 'weight', label: 'Weight', icon: Scale },
           ].map(t => {
@@ -322,81 +295,6 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
             </form>
           )}
 
-          {/* TAB 3: WALK */}
-          {activeTab === 'walk' && (
-            <form onSubmit={handleAddWalk} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                  Walk Title
-                </label>
-                <input
-                  type="text"
-                  value={walkTitle}
-                  onChange={e => setWalkTitle(e.target.value)}
-                  placeholder="e.g. Evening Campus Loop"
-                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                    Steps Count
-                  </label>
-                  <input
-                    type="number"
-                    value={walkSteps}
-                    onChange={e => setWalkSteps(e.target.value)}
-                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                    Distance (km)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={walkDist}
-                    onChange={e => setWalkDist(e.target.value)}
-                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                    Duration (min)
-                  </label>
-                  <input
-                    type="number"
-                    value={walkDur}
-                    onChange={e => setWalkDur(e.target.value)}
-                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                    Avg BPM
-                  </label>
-                  <input
-                    type="number"
-                    value={walkBpm}
-                    onChange={e => setWalkBpm(e.target.value)}
-                    className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#22C55E]"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-sm transition-all"
-              >
-                Save Walk Session
-              </button>
-            </form>
-          )}
 
           {/* TAB 4: WORKOUT */}
           {activeTab === 'workout' && (

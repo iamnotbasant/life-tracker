@@ -1,34 +1,67 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Calendar,
   Flame,
-  Footprints,
-  Dumbbell,
-  UtensilsCrossed,
-  MapPin,
   Zap,
+  Plus,
+  Moon,
+  UtensilsCrossed,
+  Dumbbell,
+  Scale,
+  Footprints,
 } from 'lucide-react';
-import { AppState, TabType, MealType } from '../../lib/types';
+import { AppState, TabType } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
 import { formatDateLabel, cn } from '../../lib/utils';
 
 interface HomeViewProps {
   state: AppState;
   onSelectTab: (tab: TabType) => void;
-  onOpenQuickLog?: (tab?: 'steps' | 'meal' | 'walk' | 'workout' | 'weight') => void;
+  onOpenQuickLog?: (tab?: 'steps' | 'meal' | 'workout' | 'weight') => void;
   onOpenPointsInfo: () => void;
   streak: number;
   onDateChange?: (newDate: string) => void;
 }
 
+interface TimelineNode {
+  id: string;
+  timeLabel: string;
+  sortMinutes: number;
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  details?: React.ReactNode;
+  badge?: string;
+  onClick?: () => void;
+}
+
+function formatTimeString(timeStr?: string): string {
+  if (!timeStr) return '';
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+function parseMinutes(timeStr?: string, defaultMinutes = 0): number {
+  if (!timeStr) return defaultMinutes;
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return defaultMinutes;
+  return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+}
+
 export const HomeView: React.FC<HomeViewProps> = ({
   state,
   onSelectTab,
+  onOpenQuickLog,
   onOpenPointsInfo,
   streak,
   onDateChange,
@@ -43,12 +76,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     points: 0,
   };
 
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
-
-  const toggleCard = (cardId: string) => {
-    setExpandedCard(prev => (prev === cardId ? null : cardId));
-  };
 
   // Calculations for current active date
   const steps = day.steps || 0;
@@ -63,18 +91,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const meals = day.meals || [];
   const totalKcal = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
-  const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
-
-  const netKcal = totalKcal - totalBurned;
   const targetKcal = profile.calorieGoalGain || 2500;
   const caloriePercent = Math.min(Math.round((totalKcal / targetKcal) * 100), 100);
-  const netDiff = netKcal - targetKcal;
-  const netDiffFormatted = `${netDiff >= 0 ? '+' : ''}${netDiff.toLocaleString()} vs target`;
-
-  const walks = day.walks || [];
-  const totalWalkKm = walks.reduce((sum, w) => sum + (w.distanceKm || 0), 0);
-  const totalWalkSteps = walks.reduce((sum, w) => sum + (w.steps || 0), 0);
-  const totalWalkMin = walks.reduce((sum, w) => sum + (w.durationMin || 0), 0);
+  const netKcal = totalKcal - totalBurned;
 
   // All-time total points
   const totalAllTimePoints = Object.values(days).reduce((sum, d) => sum + (d.points || 0), 0);
@@ -119,29 +138,136 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const isToday = activeDate === '2026-10-03' || activeDate === new Date().toISOString().split('T')[0];
   const dateLabel = isToday ? `Today, ${formatDateLabel(activeDate)}` : formatDateLabel(activeDate);
 
-  // 7-day strip calculation for steps card
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const [y, m, d] = activeDate.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    date.setDate(date.getDate() - (6 - i));
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const dateKey = `${yyyy}-${mm}-${dd}`;
-    const dayData = days[dateKey];
-    const daySteps = dayData?.steps || 0;
-    const dayLetter = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()];
-    const isSelected = dateKey === activeDate;
-    return { dateKey, daySteps, dayLetter, isSelected };
-  });
-  const maxSteps7d = Math.max(stepsGoal, ...last7Days.map(d => d.daySteps), 1);
+  // ─────────────────────────────────────────────────────────────
+  // Build time-ordered timeline nodes from the SELECTED day's data
+  // ─────────────────────────────────────────────────────────────
+  const nodes: TimelineNode[] = [];
 
-  const mealGroups: { type: MealType; label: string }[] = [
-    { type: 'breakfast', label: 'BREAKFAST' },
-    { type: 'lunch', label: 'LUNCH' },
-    { type: 'snack', label: 'SNACK' },
-    { type: 'dinner', label: 'DINNER' },
-  ];
+  // 1. Sleep/wake node (Lucide Moon icon): "Woke 7:30 AM · 8h"
+  let sleepSortMinutes = 450; // default 7:30 AM
+  if (day.sleep && (day.sleep.sleepHours !== undefined || day.sleep.sleepEnd)) {
+    const wakeStr = day.sleep.sleepEnd || '07:30';
+    const wakeFormatted = formatTimeString(wakeStr);
+    sleepSortMinutes = parseMinutes(wakeStr, 450);
+    const sleepDuration = day.sleep.sleepHours ? `${day.sleep.sleepHours}h` : '';
+    const sleepLabel = `Woke ${wakeFormatted}${sleepDuration ? ` · ${sleepDuration}` : ''}`;
+    const bedtimeSub = day.sleep.sleepStart
+      ? `Asleep at ${formatTimeString(day.sleep.sleepStart)}`
+      : undefined;
+
+    nodes.push({
+      id: 'node-sleep',
+      timeLabel: wakeFormatted,
+      sortMinutes: sleepSortMinutes,
+      icon: Moon,
+      title: 'Sleep & Wake',
+      subtitle: sleepLabel,
+      details: bedtimeSub ? (
+        <p className="text-[11px] text-zinc-500 mt-0.5">{bedtimeSub}</p>
+      ) : undefined,
+      badge: day.pointsBreakdown?.sleepPts
+        ? `${day.pointsBreakdown.sleepPts > 0 ? '+' : ''}${day.pointsBreakdown.sleepPts} pts`
+        : undefined,
+      onClick: onOpenPointsInfo,
+    });
+  }
+
+  // 2. Steps node (Lucide Footprints icon): "7,450 steps · 320 kcal"
+  // Place as the FIRST node after sleep (or as summary node at top of timeline)
+  if (steps > 0) {
+    const stepsSortMinutes = nodes.length > 0 ? sleepSortMinutes + 0.1 : 450.1;
+    nodes.push({
+      id: 'node-steps',
+      timeLabel: 'All Day',
+      sortMinutes: stepsSortMinutes,
+      icon: Footprints,
+      title: 'Steps',
+      subtitle: `${steps.toLocaleString()} steps · ${stepsBurned} kcal`,
+      details: (
+        <div className="mt-1.5 space-y-1">
+          <div className="h-1.5 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02]">
+            <div
+              className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
+              style={{ width: `${stepsPercent}%` }}
+            />
+          </div>
+          <div className="text-[10px] text-zinc-500 font-medium flex items-center justify-between">
+            <span>goal {stepsGoal.toLocaleString()}</span>
+            <span>{stepsPercent}%</span>
+          </div>
+        </div>
+      ),
+      badge: day.pointsBreakdown?.stepsPts
+        ? `${day.pointsBreakdown.stepsPts > 0 ? '+' : ''}${day.pointsBreakdown.stepsPts} pts`
+        : undefined,
+      onClick: () => onSelectTab('steps'),
+    });
+  }
+
+  // 3. Weight node (Lucide Scale icon) if logged that day: "48.9 kg"
+  const dayWeight = day.weight ?? state.weightHistory.find((w) => w.date === activeDate)?.weightKg;
+  const weightNote = state.weightHistory.find((w) => w.date === activeDate)?.note;
+  if (dayWeight !== undefined && dayWeight > 0) {
+    const weightSortMinutes = nodes.length > 0 ? sleepSortMinutes + 0.2 : 450.2;
+    nodes.push({
+      id: 'node-weight',
+      timeLabel: 'Morning',
+      sortMinutes: weightSortMinutes,
+      icon: Scale,
+      title: 'Weight',
+      subtitle: `${dayWeight} kg${weightNote ? ` · ${weightNote}` : ''}`,
+      badge: day.pointsBreakdown?.weightPts
+        ? `+${day.pointsBreakdown.weightPts} pts`
+        : undefined,
+      onClick: () => onSelectTab('weight'),
+    });
+  }
+
+  // 4. Meal nodes in time order (Lucide UtensilsCrossed icon): "Breakfast · 8:45 AM" + items description + kcal (+ protein small)
+  meals.forEach((m, idx) => {
+    const formattedMealTime = formatTimeString(m.time);
+    const mealTypeName = m.mealType.charAt(0).toUpperCase() + m.mealType.slice(1);
+    nodes.push({
+      id: m.id || `node-meal-${idx}`,
+      timeLabel: formattedMealTime || 'Meal',
+      sortMinutes: parseMinutes(m.time, 720 + idx),
+      icon: UtensilsCrossed,
+      title: `${mealTypeName} · ${formattedMealTime}`,
+      subtitle: m.description,
+      details: (
+        <div className="text-[11px] text-zinc-400 mt-1 font-medium flex items-center gap-1.5">
+          <span className="text-[#22C55E] font-semibold">{m.calories} kcal</span>
+          <span className="text-zinc-600">·</span>
+          <span>{m.protein}g protein</span>
+        </div>
+      ),
+      onClick: () => onSelectTab('meals'),
+    });
+  });
+
+  // 5. Workout nodes (Lucide Dumbbell icon): "Calisthenics Push · 6:00 PM" + duration + kcal + exercise names (small text)
+  workouts.forEach((w, idx) => {
+    const formattedWoTime = formatTimeString(w.time || '18:00');
+    const exerciseNames = w.exercises?.map((e) => e.name).filter(Boolean).join(', ') || w.notes;
+    nodes.push({
+      id: w.id || `node-workout-${idx}`,
+      timeLabel: formattedWoTime,
+      sortMinutes: parseMinutes(w.time, 18 * 60 + idx),
+      icon: Dumbbell,
+      title: `${w.name} · ${formattedWoTime}`,
+      subtitle: `${w.durationMin} min · ${w.calories} kcal`,
+      details: exerciseNames ? (
+        <p className="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+          {exerciseNames}
+        </p>
+      ) : undefined,
+      badge: '+10 pts',
+      onClick: () => onSelectTab('workout'),
+    });
+  });
+
+  // Sort nodes chronologically by time
+  nodes.sort((a, b) => a.sortMinutes - b.sortMinutes);
 
   return (
     <div className="space-y-3 pb-28 max-w-md mx-auto">
@@ -223,463 +349,161 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 1: "Today's Points" (Expandable breakdown)
+          COMPACT POINTS STRIP (slim single line: "17 pts today · 240 total")
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => toggleCard('points')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+        onClick={onOpenPointsInfo}
+        className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#121815] border border-white/[0.05] hover:border-white/10 cursor-pointer transition-all active:scale-[0.99]"
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Today's Points</span>
-          <div className="flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-[#22C55E]/60 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'points' && "rotate-180"
-              )}
-            />
-          </div>
+        <div className="flex items-center gap-2 text-xs">
+          <Flame className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+          <span className="font-semibold text-white">
+            {day.points > 0 ? `+${day.points}` : day.points} pts today
+          </span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-zinc-400 font-medium">
+            {totalAllTimePoints} total
+          </span>
         </div>
-        <div className="text-5xl font-black text-[#22C55E] tracking-tight my-1">
-          {day.points >= 0 ? `+${day.points}` : day.points}
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {totalAllTimePoints} total
-        </div>
-
-        {/* Inline Expanded Points Breakdown */}
-        {expandedCard === 'points' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {!day.pointsBreakdown ? (
-              <div className="text-sm text-zinc-500 py-1">No breakdown yet</div>
-            ) : (
-              <div className="divide-y divide-white/[0.05]">
-                {[
-                  { label: 'Calories', pts: day.pointsBreakdown.caloriesPts },
-                  { label: 'Protein', pts: day.pointsBreakdown.proteinPts },
-                  { label: 'Steps', pts: day.pointsBreakdown.stepsPts },
-                  { label: 'Workout', pts: day.pointsBreakdown.workoutPts },
-                  { label: 'Sleep', pts: day.pointsBreakdown.sleepPts },
-                  { label: 'Weight', pts: day.pointsBreakdown.weightPts },
-                  { label: 'Streak', pts: day.pointsBreakdown.streakPts },
-                ].map((item) => (
-                  <div key={item.label} className="py-1.5 flex items-center justify-between text-sm">
-                    <span className="text-zinc-300">{item.label}</span>
-                    <span
-                      className={cn(
-                        "font-semibold text-xs",
-                        item.pts > 0 ? "text-[#22C55E]" : item.pts < 0 ? "text-rose-400" : "text-zinc-500"
-                      )}
-                    >
-                      {item.pts > 0 ? `+${item.pts} pts` : item.pts < 0 ? `${item.pts} pts` : '0 pts'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenPointsInfo();
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Points Guide →
-              </button>
-            </div>
-          </div>
-        )}
+        <span className="text-[11px] font-medium text-[#22C55E] hover:underline">
+          Rules →
+        </span>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 2: "Calories" (Expandable breakdown)
+          SLIM CALORIES BAR (consumed/target with green progress bar)
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => toggleCard('calories')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+        onClick={() => onSelectTab('calories')}
+        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-3.5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Calories</span>
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'calories' && "rotate-180"
-              )}
-            />
+        <div className="flex items-center justify-between text-xs mb-1.5">
+          <div className="flex items-center gap-1.5 font-semibold text-zinc-300">
+            <Zap className="w-3.5 h-3.5 text-[#22C55E]" />
+            <span>Calories</span>
           </div>
+          <span className="text-zinc-400 font-medium text-xs">
+            {totalKcal.toLocaleString()} / {targetKcal.toLocaleString()} kcal
+          </span>
         </div>
-        <div className="text-3xl font-black text-white tracking-tight my-1.5">
-          {totalKcal.toLocaleString()} <span className="text-zinc-500 text-lg font-normal">/ {targetKcal.toLocaleString()} kcal</span>
-        </div>
-        {/* Emerald green bar */}
         <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02]">
           <div
             className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
             style={{ width: `${caloriePercent}%` }}
           />
         </div>
-        <div className="text-[11px] text-zinc-500 font-medium mt-2 flex items-center justify-between">
-          <span>Net {netKcal >= 0 ? `+${netKcal}` : netKcal} kcal</span>
+        <div className="text-[10px] text-zinc-500 font-medium mt-1.5 flex items-center justify-between">
+          <span>Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : netKcal.toLocaleString()} kcal</span>
           <span>{caloriePercent}% of goal</span>
         </div>
-
-        {/* Inline Expanded Calories Detail */}
-        {expandedCard === 'calories' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05] space-y-1.5 text-sm">
-            <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-              <span className="text-zinc-400">Consumed</span>
-              <span className="text-white font-medium">{totalKcal.toLocaleString()} kcal</span>
-            </div>
-
-            <div className="py-1 border-b border-white/[0.05]">
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Burned</span>
-                <span className="text-white font-medium">{totalBurned.toLocaleString()} kcal</span>
-              </div>
-              <div className="pl-3 pt-1 space-y-0.5 text-xs text-zinc-500">
-                <div className="flex items-center justify-between">
-                  <span>Workout</span>
-                  <span className="text-zinc-400">{workoutBurned.toLocaleString()} kcal</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Steps/Walk</span>
-                  <span className="text-zinc-400">{stepsBurned.toLocaleString()} kcal</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Base</span>
-                  <span className="text-zinc-400">{bmr.toLocaleString()} kcal</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-              <span className="text-zinc-400">Net</span>
-              <div className="text-right">
-                <span className="text-white font-medium">{netKcal >= 0 ? `+${netKcal.toLocaleString()}` : netKcal.toLocaleString()} kcal</span>
-                <span className="text-xs text-zinc-500 ml-1.5">vs target {targetKcal.toLocaleString()} ({netDiffFormatted})</span>
-              </div>
-            </div>
-
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('calories');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Calories →
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 3: "Steps" (Expandable goal bar + 7-day mini strip)
+          "TODAY" VERTICAL DAY TIMELINE
          ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => toggleCard('steps')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Steps</span>
-          <div className="flex items-center gap-1.5">
-            <Footprints className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'steps' && "rotate-180"
-              )}
-            />
+      <div className="pt-2">
+        <div className="flex items-center justify-between pb-2 px-1">
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+            {isToday ? "Today's Timeline" : 'Day Timeline'}
+          </h2>
+          <button
+            type="button"
+            onClick={() => onOpenQuickLog?.('steps')}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#18201C] hover:bg-[#22C55E]/15 hover:text-[#22C55E] text-zinc-400 border border-white/[0.06] text-xs font-semibold transition-all active:scale-95"
+            title="Quick log"
+            aria-label="Quick log"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#22C55E]" />
+            <span>Add</span>
+          </button>
+        </div>
+
+        {nodes.length === 0 ? (
+          <div className="py-12 px-6 rounded-2xl bg-[#121815]/60 border border-white/[0.04] text-center">
+            <p className="text-sm text-zinc-400 font-medium">Nothing logged yet — tap + to add</p>
+            <button
+              type="button"
+              onClick={() => onOpenQuickLog?.('steps')}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black text-xs font-bold transition-all shadow-md active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Log Activity</span>
+            </button>
           </div>
-        </div>
-        <div className="text-4xl font-black text-white tracking-tight my-1">
-          {steps.toLocaleString()}
-        </div>
-        {/* Goal progress bar in collapsed view */}
-        <div className="h-1.5 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] my-1.5">
-          <div
-            className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
-            style={{ width: `${stepsPercent}%` }}
-          />
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium flex items-center justify-between">
-          <span>goal {stepsGoal.toLocaleString()}</span>
-          <span>{stepsPercent}%</span>
-        </div>
+        ) : (
+          <div className="relative pt-1">
+            {nodes.map((node, idx) => {
+              const isFirst = idx === 0;
+              const isLast = idx === nodes.length - 1;
+              const Icon = node.icon;
 
-        {/* Inline Expanded Steps Detail */}
-        {expandedCard === 'steps' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
-              <span>Goal Progress</span>
-              <span className="text-white font-medium">{steps.toLocaleString()} / {stepsGoal.toLocaleString()} ({stepsPercent}%)</span>
-            </div>
-            <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] mb-3">
-              <div
-                className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
-                style={{ width: `${stepsPercent}%` }}
-              />
-            </div>
-
-            {/* 7-day mini bar strip */}
-            <div className="text-[10px] uppercase font-semibold text-zinc-500 tracking-wider mb-1.5">
-              Last 7 Days
-            </div>
-            <div className="flex items-end justify-between gap-1.5 bg-[#0e1411] p-2.5 rounded-xl border border-white/[0.04]">
-              {last7Days.map((d) => (
-                <div key={d.dateKey} className="flex-1 flex flex-col items-center gap-1.5">
-                  <div className="w-full h-12 bg-[#18201C] rounded-md flex items-end p-0.5 justify-center overflow-hidden">
-                    <div
-                      className={cn(
-                        "w-full rounded-sm transition-all duration-300",
-                        d.isSelected ? "bg-[#22C55E]" : "bg-zinc-700"
-                      )}
-                      style={{
-                        height: `${Math.min(Math.max(Math.round((d.daySteps / maxSteps7d) * 100), 6), 100)}%`,
-                      }}
-                      title={`${d.dateKey}: ${d.daySteps.toLocaleString()} steps`}
-                    />
-                  </div>
-                  <span
-                    className={cn(
-                      "text-[10px]",
-                      d.isSelected ? "text-[#22C55E] font-bold" : "text-zinc-500"
-                    )}
-                  >
-                    {d.dayLetter}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-2 border-t border-white/[0.05] mt-3">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('steps');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Steps →
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          CARD 4: "Walk" (Expandable session list)
-         ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => toggleCard('walk')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Walk</span>
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'walk' && "rotate-180"
-              )}
-            />
-          </div>
-        </div>
-        <div className="text-4xl font-black text-white tracking-tight my-1">
-          {totalWalkKm.toFixed(1)} <span className="text-lg font-normal text-zinc-500">km</span>
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {totalWalkSteps > 0 ? `${totalWalkSteps.toLocaleString()} steps • ${totalWalkMin} min` : 'No walks logged'}
-        </div>
-
-        {/* Inline Expanded Walk Detail */}
-        {expandedCard === 'walk' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {walks.length === 0 ? (
-              <div className="text-sm text-zinc-500 py-1">No walks logged</div>
-            ) : (
-              <div className="divide-y divide-white/[0.05]">
-                {walks.map((w) => (
-                  <div key={w.id} className="py-1.5 flex items-center justify-between text-sm gap-2">
-                    <span className="font-medium text-white truncate">{w.title || 'Walk'}</span>
-                    <span className="text-xs text-zinc-400 shrink-0">
-                      {w.distanceKm} km • {w.durationMin} min • {w.calories} kcal
+              return (
+                <div key={node.id} className="relative flex items-start gap-2.5">
+                  {/* Time label on the LEFT */}
+                  <div className="w-14 shrink-0 text-right pt-3">
+                    <span className="text-[11px] font-bold text-zinc-400 tracking-tight block leading-tight">
+                      {node.timeLabel}
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('walk');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Walk →
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          CARD 5: "Workout" (Expandable workout list)
-         ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => toggleCard('workout')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Workout</span>
-          <div className="flex items-center gap-1.5">
-            <Dumbbell className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'workout' && "rotate-180"
-              )}
-            />
-          </div>
-        </div>
-        <div className="text-4xl font-black text-white tracking-tight my-1">
-          {workoutBurned} <span className="text-lg font-normal text-zinc-500">kcal burned</span>
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {workouts.length > 0 ? `${workouts.length} session${workouts.length > 1 ? 's' : ''} logged` : '0 min active'}
-        </div>
+                  {/* Vertical line + Green dot ON the line */}
+                  <div className="relative flex flex-col items-center self-stretch shrink-0 w-5">
+                    {/* Top connecting line segment */}
+                    <div
+                      className={cn(
+                        'w-[2px] grow bg-white/[0.08]',
+                        isFirst ? 'invisible' : ''
+                      )}
+                    />
+                    {/* Green dot */}
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E] ring-4 ring-[#0A0F0D] shrink-0 my-1 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                    {/* Bottom connecting line segment */}
+                    <div
+                      className={cn(
+                        'w-[2px] grow bg-white/[0.08]',
+                        isLast ? 'invisible' : ''
+                      )}
+                    />
+                  </div>
 
-        {/* Inline Expanded Workout Detail */}
-        {expandedCard === 'workout' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {workouts.length === 0 ? (
-              <div className="text-sm text-zinc-500 py-1">No workouts logged</div>
-            ) : (
-              <div className="divide-y divide-white/[0.05]">
-                {workouts.map((w) => {
-                  const exerciseNames = w.exercises?.map(e => e.name).filter(Boolean).join(', ');
-                  return (
-                    <div key={w.id} className="py-1.5 text-sm">
+                  {/* Compact card on the RIGHT with details (no tap-to-expand) */}
+                  <div className="flex-1 pb-3 pt-0.5 min-w-0">
+                    <div
+                      onClick={node.onClick}
+                      className={cn(
+                        'bg-[#121815] border border-white/[0.05] rounded-2xl p-3.5 transition-all shadow-sm',
+                        node.onClick &&
+                          'hover:border-[#22C55E]/30 cursor-pointer active:scale-[0.99]'
+                      )}
+                    >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-white truncate">{w.name}</span>
-                        <span className="text-xs text-zinc-400 shrink-0">
-                          {w.durationMin} min • {w.calories} kcal
-                        </span>
-                      </div>
-                      {exerciseNames ? (
-                        <div className="text-xs text-zinc-500 truncate mt-0.5">
-                          {exerciseNames}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('workout');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Workout →
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          CARD 6: "Meals" (Expandable meals grouped timeline)
-         ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => toggleCard('meals')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Meals</span>
-          <div className="flex items-center gap-1.5">
-            <UtensilsCrossed className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'meals' && "rotate-180"
-              )}
-            />
-          </div>
-        </div>
-        <div className="text-4xl font-black text-white tracking-tight my-1">
-          {totalKcal} <span className="text-lg font-normal text-zinc-500">kcal</span>
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {totalProtein}g protein • {meals.length} logged
-        </div>
-
-        {/* Inline Expanded Meals Detail */}
-        {expandedCard === 'meals' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {meals.length === 0 ? (
-              <div className="text-sm text-zinc-500 py-1">No meals logged yet</div>
-            ) : (
-              <div className="space-y-2">
-                {mealGroups.map((group) => {
-                  const groupMeals = meals.filter(m => m.mealType === group.type);
-                  if (groupMeals.length === 0) return null;
-                  return (
-                    <div key={group.type} className="pt-1 first:pt-0">
-                      <div className="text-[10px] uppercase font-semibold text-zinc-500 tracking-wider mb-1">
-                        {group.label}
-                      </div>
-                      <div className="divide-y divide-white/[0.05]">
-                        {groupMeals.map((m) => (
-                          <div key={m.id} className="py-1 flex items-center justify-between text-sm gap-2">
-                            <span className="truncate text-zinc-200">{m.description}</span>
-                            <span className="shrink-0 text-right whitespace-nowrap">
-                              <span className="text-white font-medium">{m.calories} kcal</span>
-                              <span className="text-zinc-500 text-xs ml-1.5">{m.protein}g protein</span>
-                            </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 flex items-center justify-center shrink-0 text-[#22C55E]">
+                            <Icon className="w-3.5 h-3.5" />
                           </div>
-                        ))}
+                          <span className="font-bold text-white text-xs truncate">
+                            {node.title}
+                          </span>
+                        </div>
+                        {node.badge && (
+                          <span className="text-[10px] font-bold text-[#22C55E] bg-[#22C55E]/10 px-1.5 py-0.5 rounded shrink-0">
+                            {node.badge}
+                          </span>
+                        )}
                       </div>
+
+                      {node.subtitle && (
+                        <p className="text-xs text-zinc-300 mt-1.5 leading-snug">
+                          {node.subtitle}
+                        </p>
+                      )}
+
+                      {node.details}
                     </div>
-                  );
-                })}
-
-                {/* Footer row */}
-                <div className="border-t border-white/[0.05] pt-2 mt-2 flex items-center justify-between text-xs font-semibold text-zinc-300">
-                  <span>TOTAL</span>
-                  <span>{totalKcal} kcal • {totalProtein}g protein</span>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('meals');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Meals →
-              </button>
-            </div>
+              );
+            })}
           </div>
         )}
       </div>
