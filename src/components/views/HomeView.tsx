@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,10 +11,12 @@ import {
   UtensilsCrossed,
   Utensils,
   Zap,
+  Moon,
 } from 'lucide-react';
-import { AppState, TabType, MealType } from '../../lib/types';
+import { AppState, TabType, MealType, SleepData } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
-import { formatDateLabel, cn } from '../../lib/utils';
+import { formatDateLabel, formatTime12h, calculateSleepHours, cn } from '../../lib/utils';
+import { SleepModal } from '../SleepModal';
 
 interface HomeViewProps {
   state: AppState;
@@ -23,6 +25,7 @@ interface HomeViewProps {
   onOpenPointsInfo: () => void;
   streak: number;
   onDateChange?: (newDate: string) => void;
+  onUpdateSleep?: (dateStr: string, sleep?: SleepData) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -31,6 +34,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenPointsInfo,
   streak,
   onDateChange,
+  onUpdateSleep,
 }) => {
   const { profile, activeDate, days } = state;
   const day = days[activeDate] || {
@@ -43,6 +47,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const [isSleepModalOpen, setIsSleepModalOpen] = useState(false);
 
   // Calculations for current active date
   const steps = day.steps || 0;
@@ -62,6 +67,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const netKcal = totalKcal - totalBurned;
   const targetKcal = profile.calorieGoalGain || 2500;
   const caloriePercent = Math.min(Math.round((totalKcal / targetKcal) * 100), 100);
+
+  // Sleep info for active date
+  const sleep = day.sleep;
+  const hasSleep = Boolean(
+    sleep && (sleep.sleepHours !== undefined || (sleep.sleepStart && sleep.sleepEnd))
+  );
+  const sleepHours =
+    sleep?.sleepHours !== undefined
+      ? sleep.sleepHours
+      : (sleep?.sleepStart && sleep?.sleepEnd
+        ? calculateSleepHours(sleep.sleepStart, sleep.sleepEnd)
+        : null);
+  const sleepRange =
+    sleep?.sleepStart && sleep?.sleepEnd
+      ? `${formatTime12h(sleep.sleepStart)} → ${formatTime12h(sleep.sleepEnd)}`
+      : null;
 
   // All-time total points
   const totalAllTimePoints = Object.values(days).reduce((sum, d) => sum + (d.points || 0), 0);
@@ -189,7 +210,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             aria-label="Select date"
           >
             <Calendar className="w-4 h-4 text-[#22C55E]/80 group-hover:text-[#22C55E] transition-colors shrink-0" />
-            <span className="text-sm font-semibold text-white tracking-wide truncate">
+            <span className="text-sm font-semibold text-white tracking-wide">
               {dateLabel}
             </span>
           </button>
@@ -219,7 +240,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 1: Points Card
+          CARD 1: Sleep Card (FIRST on dashboard after Date Navigator)
+          Compact card: small label "Sleep", big value "8h" (or "—"),
+          caption with the range e.g. "11:30 PM → 7:30 AM" or empty hint.
+          Moon Lucide icon. Tapping opens SleepModal.
+         ───────────────────────────────────────────────────────────── */}
+      <div
+        onClick={() => setIsSleepModalOpen(true)}
+        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-zinc-400">Sleep</span>
+          <Moon className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
+        </div>
+        <div className="text-4xl font-black text-white tracking-tight my-1">
+          {hasSleep && sleepHours !== null ? `${sleepHours}h` : '—'}
+        </div>
+        <div className="text-[11px] text-zinc-500 font-medium">
+          {hasSleep && sleepRange ? sleepRange : "Log last night's sleep"}
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          CARD 2: Points Card
           Big green number + small caption (total points).
           Tapping it -> scoring-guide modal
          ───────────────────────────────────────────────────────────── */}
@@ -243,7 +286,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 2: Calories Card
+          CARD 3: Calories Card
           "1,240 / 2,500 kcal" + green progress bar + NET row directly beneath
          ───────────────────────────────────────────────────────────── */}
       <div
@@ -252,10 +295,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Calories</span>
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
-          </div>
+          <Zap className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-3xl font-black text-white tracking-tight my-1.5">
           {totalKcal.toLocaleString()} <span className="text-zinc-500 text-lg font-normal">/ {targetKcal.toLocaleString()} kcal</span>
@@ -268,14 +308,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
           />
         </div>
         {/* Inline NET row directly beneath */}
-        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Flame className="w-3.5 h-3.5 text-[#22C55E]/80 shrink-0" />
-            <div className="flex items-baseline gap-1.5 min-w-0">
-              <span className="text-xs font-semibold text-zinc-200 shrink-0">
+            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0">
+              <span className="text-xs font-semibold text-zinc-200">
                 Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
               </span>
-              <span className="text-[11px] text-zinc-500 truncate">
+              <span className="text-[11px] text-zinc-500">
                 · {totalBurned.toLocaleString()} burned
               </span>
             </div>
@@ -287,7 +327,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 3: Steps Card
+          CARD 4: Steps Card
           Big number + goal bar ("7,450 / 10,000") + compact 7-day mini strip
          ───────────────────────────────────────────────────────────── */}
       <div
@@ -296,10 +336,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Steps</span>
-          <div className="flex items-center gap-1.5">
-            <Footprints className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
-          </div>
+          <Footprints className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
           {steps.toLocaleString()}
@@ -315,15 +352,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
           />
         </div>
 
+        {/* Optional steps note */}
+        {day.stepsNote && (
+          <div className="text-[11px] text-zinc-400 mt-2 break-words">
+            {day.stepsNote}
+          </div>
+        )}
+
         {/* Compact 7-day mini strip */}
         <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
-          <div className="flex items-center justify-between text-xs mb-2">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between text-xs mb-2 gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
               <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
               <span className="text-xs font-semibold text-zinc-300">Last 7 Days</span>
               <span className="text-[11px] text-zinc-500">· avg {Math.round(last7Days.reduce((s, d) => s + d.daySteps, 0) / 7).toLocaleString()}</span>
             </div>
-            <span className="text-xs font-semibold text-zinc-400">{stepsBurned} kcal</span>
+            <span className="text-xs font-semibold text-zinc-400 shrink-0 ml-2">{stepsBurned} kcal</span>
           </div>
           <div className="flex items-end justify-between gap-1.5 bg-[#0e1411] p-2 rounded-xl border border-white/[0.04]">
             {last7Days.map((d) => (
@@ -355,7 +399,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 4: Meals Card
+          CARD 5: Meals Card
           Inline rows per meal type logged today + footer row
          ───────────────────────────────────────────────────────────── */}
       <div
@@ -364,10 +408,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Meals</span>
-          <div className="flex items-center gap-1.5">
-            <UtensilsCrossed className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
-          </div>
+          <UtensilsCrossed className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
           {totalKcal.toLocaleString()} <span className="text-lg font-normal text-zinc-500">kcal</span>
@@ -384,15 +425,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="space-y-1">
               <div className="divide-y divide-white/[0.04]">
                 {loggedMealTypes.map((g) => (
-                  <div key={g.type} className="py-1.5 flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <Utensils className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                      <span className="font-semibold text-zinc-200 shrink-0">{g.label}</span>
-                      <span className="text-zinc-500 truncate">{g.foodItems}</span>
+                  <div key={g.type} className="py-2 text-xs">
+                    {/* First line: meal-type label left + kcal right-aligned */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Utensils className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <span className="font-semibold text-zinc-200">{g.label}</span>
+                      </div>
+                      <span className="font-semibold text-white shrink-0 text-right">
+                        {g.kcal.toLocaleString()} kcal
+                      </span>
                     </div>
-                    <span className="font-semibold text-white shrink-0 text-right ml-1">
-                      {g.kcal.toLocaleString()} kcal
-                    </span>
+                    {/* Complete food description below in muted/smaller text that wraps to as many lines as needed */}
+                    {g.foodItems && (
+                      <div className="text-[11px] text-zinc-400 mt-1 pl-5 break-words">
+                        {g.foodItems}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -408,7 +457,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 5: Workout Card
+          CARD 6: Workout Card
           Inline list of today's workouts
          ───────────────────────────────────────────────────────────── */}
       <div
@@ -417,10 +466,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Workouts</span>
-          <div className="flex items-center gap-1.5">
-            <Dumbbell className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
-          </div>
+          <Dumbbell className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
           {workoutBurned.toLocaleString()} <span className="text-lg font-normal text-zinc-500">kcal burned</span>
@@ -439,20 +485,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 const exerciseNames = w.exercises?.map(e => e.name).filter(Boolean).join(', ');
                 return (
                   <div key={w.id} className="py-2 text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <Dumbbell className="w-3.5 h-3.5 text-[#22C55E]/70 shrink-0" />
-                        <span className="font-semibold text-zinc-200 truncate">{w.name}</span>
-                        {w.time && (
-                          <span className="text-[11px] text-zinc-500 shrink-0">{w.time}</span>
-                        )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 min-w-0 flex-1">
+                        <Dumbbell className="w-3.5 h-3.5 text-[#22C55E]/70 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="font-semibold text-zinc-200">{w.name}</span>
+                            {w.time && (
+                              <span className="text-[11px] text-zinc-500 shrink-0">{w.time}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <span className="text-xs font-semibold text-zinc-300 shrink-0 text-right ml-1">
                         {w.durationMin}m · {w.calories} kcal
                       </span>
                     </div>
                     {exerciseNames && (
-                      <div className="pl-5.5 text-[11px] text-zinc-500 truncate mt-0.5">
+                      <div className="pl-5.5 text-[11px] text-zinc-400 mt-1 break-words">
                         {exerciseNames}
                       </div>
                     )}
@@ -463,6 +513,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          Sleep Modal Bottom-Sheet
+         ───────────────────────────────────────────────────────────── */}
+      <SleepModal
+        isOpen={isSleepModalOpen}
+        onClose={() => setIsSleepModalOpen(false)}
+        sleepData={day.sleep}
+        dateLabel={dateLabel}
+        onSaveSleep={(newSleep) => {
+          if (onUpdateSleep) {
+            onUpdateSleep(activeDate, newSleep);
+          }
+        }}
+        onClearSleep={() => {
+          if (onUpdateSleep) {
+            onUpdateSleep(activeDate, undefined);
+          }
+        }}
+      />
     </div>
   );
 };

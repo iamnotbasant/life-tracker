@@ -46,6 +46,7 @@ export function calculateStreak(days: Record<string, any>, referenceDate: string
       (day.steps && day.steps > 0) ||
       (day.meals && day.meals.length > 0) ||
       (day.workouts && day.workouts.length > 0) ||
+      (day.sleep && ((day.sleep.sleepHours && day.sleep.sleepHours > 0) || day.sleep.sleepStart)) ||
       (day.points && day.points > 0)
     );
 
@@ -58,4 +59,40 @@ export function calculateStreak(days: Record<string, any>, referenceDate: string
   }
 
   return streak;
+}
+
+// Convert "HH:MM" (24h) to 12h format ("11:30 PM", "7:30 AM")
+export function formatTime12h(timeStr?: string): string {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr || '0', 10);
+  if (isNaN(h)) return timeStr;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const mFormatted = String(isNaN(m) ? 0 : m).padStart(2, '0');
+  return `${h12}:${mFormatted} ${period}`;
+}
+
+// Calculate sleep duration in hours from two "HH:MM" 24h times, handling overnight wrap
+export function calculateSleepHours(sleepStart: string, sleepEnd: string): number {
+  if (!sleepStart || !sleepEnd) return 0;
+  const [h1, m1] = sleepStart.split(':').map(Number);
+  const [h2, m2] = sleepEnd.split(':').map(Number);
+  if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return 0;
+
+  const startMin = h1 * 60 + m1;
+  const endMin = h2 * 60 + m2;
+
+  if (startMin === endMin) {
+    return 0;
+  }
+
+  let diffMin = endMin - startMin;
+  if (diffMin < 0) {
+    // Overnight wrap, e.g. 23:30 (1410 min) to 07:30 (450 min) -> 480 min
+    diffMin += 24 * 60;
+  }
+
+  return Math.round((diffMin / 60) * 10) / 10;
 }

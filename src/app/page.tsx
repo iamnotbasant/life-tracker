@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AppState, TabType, MealEntry, WorkoutEntry, UserProfile } from '../lib/types';
+import { AppState, TabType, MealEntry, WorkoutEntry, UserProfile, SleepData } from '../lib/types';
 import { loadAppState, saveAppState } from '../lib/storage';
 import { calculateDayPoints } from '../lib/points';
 import { calculateStreak } from '../lib/utils';
@@ -100,6 +100,13 @@ export default function App() {
     setState(prev => prev ? { ...prev, activeDate: newDate } : prev);
   };
 
+  const handleUpdateSleep = (dateStr: string, sleep?: SleepData) => {
+    updateDayData(dateStr, d => ({
+      ...d,
+      sleep,
+    }));
+  };
+
   const handleUpdateSteps = (dateStr: string, steps: number, note?: string) => {
     updateDayData(dateStr, d => ({
       ...d,
@@ -194,6 +201,7 @@ export default function App() {
             onOpenPointsInfo={() => setIsPointsInfoOpen(true)}
             streak={streak}
             onDateChange={handleDateChange}
+            onUpdateSleep={handleUpdateSleep}
           />
         )}
 
