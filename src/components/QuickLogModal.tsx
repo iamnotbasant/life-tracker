@@ -79,6 +79,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
   const [woType, setWoType] = useState<'calisthenics' | 'cardio' | 'mobility' | 'strength' | 'other'>('calisthenics');
   const [woDur, setWoDur] = useState('45');
   const [woKcal, setWoKcal] = useState('220');
+  const [woTime, setWoTime] = useState('');
   const [woExercises, setWoExercises] = useState('Parallel Bar Dips 4x10\nPush-ups 4x15\nPull-ups 3x8');
   const [isWorkoutAiEstimating, setIsWorkoutAiEstimating] = useState(false);
   const [workoutAiNotice, setWorkoutAiNotice] = useState<{
@@ -220,7 +221,7 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
       type: woType,
       durationMin: Number(woDur) || 30,
       calories: Number(woKcal) || 200,
-      time: '18:00',
+      time: woTime,
       exercises: exLines,
     };
     onAddWorkout(newWo);
@@ -531,6 +532,18 @@ export const QuickLogModal: React.FC<QuickLogModalProps> = ({
                     className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
+                  Time <span className="normal-case font-medium text-zinc-500">(optional)</span>
+                </label>
+                <input
+                  type="time"
+                  value={woTime}
+                  onChange={e => setWoTime(e.target.value)}
+                  className="w-full bg-[#18201C] border border-white/[0.08] rounded-xl px-3 py-2 text-base font-bold text-white focus:outline-none focus:border-[#22C55E] [color-scheme:dark]"
+                />
               </div>
 
               <div>
