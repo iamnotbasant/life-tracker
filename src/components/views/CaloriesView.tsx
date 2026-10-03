@@ -105,7 +105,7 @@ export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab }
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 2: Burned (Workout + Steps/Walk + Base rows)
+          CARD 2: Burned (Workout + Daily Steps + Base rows)
          ───────────────────────────────────────────────────────────── */}
       <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between">
@@ -119,7 +119,7 @@ export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab }
           Total metabolic expenditure
         </div>
 
-        {/* 3 Component Rows: Base, Steps/Walk, Workouts */}
+        {/* 3 Component Rows: Base, Daily Steps, Workouts */}
         <div className="space-y-2 pt-3 border-t border-white/[0.04]">
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#18201C] border border-white/[0.02]">
             <div>
@@ -131,7 +131,7 @@ export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab }
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#18201C] border border-white/[0.02]">
             <div>
-              <div className="text-xs font-bold text-white">Steps / Walk</div>
+              <div className="text-xs font-bold text-white">Daily Steps</div>
               <div className="text-[10px] text-zinc-500">{(currentDay.steps || 0).toLocaleString()} steps taken</div>
             </div>
             <div className="text-sm font-black text-[#22C55E]">{stepsBurned} kcal</div>

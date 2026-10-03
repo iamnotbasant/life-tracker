@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Calendar,
   Flame,
   Footprints,
   Dumbbell,
   UtensilsCrossed,
-  MapPin,
+  Utensils,
   Zap,
 } from 'lucide-react';
 import { AppState, TabType, MealType } from '../../lib/types';
@@ -20,7 +19,7 @@ import { formatDateLabel, cn } from '../../lib/utils';
 interface HomeViewProps {
   state: AppState;
   onSelectTab: (tab: TabType) => void;
-  onOpenQuickLog?: (tab?: 'steps' | 'meal' | 'walk' | 'workout' | 'weight') => void;
+  onOpenQuickLog?: (tab?: 'steps' | 'meal' | 'workout' | 'weight') => void;
   onOpenPointsInfo: () => void;
   streak: number;
   onDateChange?: (newDate: string) => void;
@@ -43,12 +42,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     points: 0,
   };
 
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
-
-  const toggleCard = (cardId: string) => {
-    setExpandedCard(prev => (prev === cardId ? null : cardId));
-  };
 
   // Calculations for current active date
   const steps = day.steps || 0;
@@ -68,13 +62,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const netKcal = totalKcal - totalBurned;
   const targetKcal = profile.calorieGoalGain || 2500;
   const caloriePercent = Math.min(Math.round((totalKcal / targetKcal) * 100), 100);
-  const netDiff = netKcal - targetKcal;
-  const netDiffFormatted = `${netDiff >= 0 ? '+' : ''}${netDiff.toLocaleString()} vs target`;
-
-  const walks = day.walks || [];
-  const totalWalkKm = walks.reduce((sum, w) => sum + (w.distanceKm || 0), 0);
-  const totalWalkSteps = walks.reduce((sum, w) => sum + (w.steps || 0), 0);
-  const totalWalkMin = walks.reduce((sum, w) => sum + (w.durationMin || 0), 0);
 
   // All-time total points
   const totalAllTimePoints = Object.values(days).reduce((sum, d) => sum + (d.points || 0), 0);
@@ -136,12 +123,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
   });
   const maxSteps7d = Math.max(stepsGoal, ...last7Days.map(d => d.daySteps), 1);
 
-  const mealGroups: { type: MealType; label: string }[] = [
-    { type: 'breakfast', label: 'BREAKFAST' },
-    { type: 'lunch', label: 'LUNCH' },
-    { type: 'snack', label: 'SNACK' },
-    { type: 'dinner', label: 'DINNER' },
+  // Grouped meals for inline meal rows
+  const mealTypes: { type: MealType; label: string }[] = [
+    { type: 'breakfast', label: 'Breakfast' },
+    { type: 'lunch', label: 'Lunch' },
+    { type: 'snack', label: 'Snack' },
+    { type: 'dinner', label: 'Dinner' },
   ];
+  const loggedMealTypes = mealTypes
+    .map(g => {
+      const typeMeals = meals.filter(m => m.mealType === g.type);
+      const kcal = typeMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+      const foodItems = typeMeals.map(m => m.description).join(', ');
+      return { ...g, meals: typeMeals, kcal, foodItems };
+    })
+    .filter(g => g.meals.length > 0);
 
   return (
     <div className="space-y-3 pb-28 max-w-md mx-auto">
@@ -223,465 +219,249 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 1: "Today's Points" (Expandable breakdown)
+          CARD 1: Points Card
+          Big green number + small caption (total points).
+          Tapping it -> scoring-guide modal
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => toggleCard('points')}
+        onClick={onOpenPointsInfo}
         className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Today's Points</span>
           <div className="flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-[#22C55E]/60 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'points' && "rotate-180"
-              )}
-            />
+            <Flame className="w-4 h-4 text-[#22C55E]/70 group-hover:text-[#22C55E] transition-colors" />
+            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Guide →</span>
           </div>
         </div>
         <div className="text-5xl font-black text-[#22C55E] tracking-tight my-1">
           {day.points >= 0 ? `+${day.points}` : day.points}
         </div>
         <div className="text-[11px] text-zinc-500 font-medium">
-          {totalAllTimePoints} total
+          {totalAllTimePoints.toLocaleString()} total
         </div>
-
-        {/* Inline Expanded Points Breakdown */}
-        {expandedCard === 'points' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {!day.pointsBreakdown ? (
-              <div className="text-sm text-zinc-500 py-1">No breakdown yet</div>
-            ) : (
-              <div className="divide-y divide-white/[0.05]">
-                {[
-                  { label: 'Calories', pts: day.pointsBreakdown.caloriesPts },
-                  { label: 'Protein', pts: day.pointsBreakdown.proteinPts },
-                  { label: 'Steps', pts: day.pointsBreakdown.stepsPts },
-                  { label: 'Workout', pts: day.pointsBreakdown.workoutPts },
-                  { label: 'Sleep', pts: day.pointsBreakdown.sleepPts },
-                  { label: 'Weight', pts: day.pointsBreakdown.weightPts },
-                  { label: 'Streak', pts: day.pointsBreakdown.streakPts },
-                ].map((item) => (
-                  <div key={item.label} className="py-1.5 flex items-center justify-between text-sm">
-                    <span className="text-zinc-300">{item.label}</span>
-                    <span
-                      className={cn(
-                        "font-semibold text-xs",
-                        item.pts > 0 ? "text-[#22C55E]" : item.pts < 0 ? "text-rose-400" : "text-zinc-500"
-                      )}
-                    >
-                      {item.pts > 0 ? `+${item.pts} pts` : item.pts < 0 ? `${item.pts} pts` : '0 pts'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenPointsInfo();
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Points Guide →
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 2: "Calories" (Expandable breakdown)
+          CARD 2: Calories Card
+          "1,240 / 2,500 kcal" + green progress bar + NET row directly beneath
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => toggleCard('calories')}
+        onClick={() => onSelectTab('calories')}
         className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Calories</span>
           <div className="flex items-center gap-1.5">
             <Zap className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'calories' && "rotate-180"
-              )}
-            />
+            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
           </div>
         </div>
         <div className="text-3xl font-black text-white tracking-tight my-1.5">
           {totalKcal.toLocaleString()} <span className="text-zinc-500 text-lg font-normal">/ {targetKcal.toLocaleString()} kcal</span>
         </div>
         {/* Emerald green bar */}
-        <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02]">
+        <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] my-2">
           <div
             className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
             style={{ width: `${caloriePercent}%` }}
           />
         </div>
-        <div className="text-[11px] text-zinc-500 font-medium mt-2 flex items-center justify-between">
-          <span>Net {netKcal >= 0 ? `+${netKcal}` : netKcal} kcal</span>
-          <span>{caloriePercent}% of goal</span>
-        </div>
-
-        {/* Inline Expanded Calories Detail */}
-        {expandedCard === 'calories' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05] space-y-1.5 text-sm">
-            <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-              <span className="text-zinc-400">Consumed</span>
-              <span className="text-white font-medium">{totalKcal.toLocaleString()} kcal</span>
-            </div>
-
-            <div className="py-1 border-b border-white/[0.05]">
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Burned</span>
-                <span className="text-white font-medium">{totalBurned.toLocaleString()} kcal</span>
-              </div>
-              <div className="pl-3 pt-1 space-y-0.5 text-xs text-zinc-500">
-                <div className="flex items-center justify-between">
-                  <span>Workout</span>
-                  <span className="text-zinc-400">{workoutBurned.toLocaleString()} kcal</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Steps/Walk</span>
-                  <span className="text-zinc-400">{stepsBurned.toLocaleString()} kcal</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Base</span>
-                  <span className="text-zinc-400">{bmr.toLocaleString()} kcal</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-white/[0.05]">
-              <span className="text-zinc-400">Net</span>
-              <div className="text-right">
-                <span className="text-white font-medium">{netKcal >= 0 ? `+${netKcal.toLocaleString()}` : netKcal.toLocaleString()} kcal</span>
-                <span className="text-xs text-zinc-500 ml-1.5">vs target {targetKcal.toLocaleString()} ({netDiffFormatted})</span>
-              </div>
-            </div>
-
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('calories');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Calories →
-              </button>
+        {/* Inline NET row directly beneath */}
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <Flame className="w-3.5 h-3.5 text-[#22C55E]/80 shrink-0" />
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="text-xs font-semibold text-zinc-200 shrink-0">
+                Net {netKcal >= 0 ? `+${netKcal.toLocaleString()}` : `−${Math.abs(netKcal).toLocaleString()}`} kcal
+              </span>
+              <span className="text-[11px] text-zinc-500 truncate">
+                · {totalBurned.toLocaleString()} burned
+              </span>
             </div>
           </div>
-        )}
+          <span className="text-xs font-semibold text-zinc-400 shrink-0 ml-2">
+            {caloriePercent}%
+          </span>
+        </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 3: "Steps" (Expandable goal bar + 7-day mini strip)
+          CARD 3: Steps Card
+          Big number + goal bar ("7,450 / 10,000") + compact 7-day mini strip
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => toggleCard('steps')}
+        onClick={() => onSelectTab('steps')}
         className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Steps</span>
           <div className="flex items-center gap-1.5">
             <Footprints className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'steps' && "rotate-180"
-              )}
-            />
+            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
           </div>
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
           {steps.toLocaleString()}
         </div>
-        {/* Goal progress bar in collapsed view */}
-        <div className="h-1.5 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] my-1.5">
+        <div className="flex items-center justify-between text-[11px] text-zinc-500 font-medium mb-1">
+          <span>{steps.toLocaleString()} / {stepsGoal.toLocaleString()}</span>
+          <span>{stepsPercent}%</span>
+        </div>
+        <div className="h-1.5 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02]">
           <div
             className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
             style={{ width: `${stepsPercent}%` }}
           />
         </div>
-        <div className="text-[11px] text-zinc-500 font-medium flex items-center justify-between">
-          <span>goal {stepsGoal.toLocaleString()}</span>
-          <span>{stepsPercent}%</span>
-        </div>
 
-        {/* Inline Expanded Steps Detail */}
-        {expandedCard === 'steps' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
-              <span>Goal Progress</span>
-              <span className="text-white font-medium">{steps.toLocaleString()} / {stepsGoal.toLocaleString()} ({stepsPercent}%)</span>
+        {/* Compact 7-day mini strip */}
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+              <span className="text-xs font-semibold text-zinc-300">Last 7 Days</span>
+              <span className="text-[11px] text-zinc-500">· avg {Math.round(last7Days.reduce((s, d) => s + d.daySteps, 0) / 7).toLocaleString()}</span>
             </div>
-            <div className="h-2 w-full bg-[#18201C] rounded-full overflow-hidden border border-white/[0.02] mb-3">
-              <div
-                className="h-full bg-[#22C55E] rounded-full transition-all duration-500"
-                style={{ width: `${stepsPercent}%` }}
-              />
-            </div>
-
-            {/* 7-day mini bar strip */}
-            <div className="text-[10px] uppercase font-semibold text-zinc-500 tracking-wider mb-1.5">
-              Last 7 Days
-            </div>
-            <div className="flex items-end justify-between gap-1.5 bg-[#0e1411] p-2.5 rounded-xl border border-white/[0.04]">
-              {last7Days.map((d) => (
-                <div key={d.dateKey} className="flex-1 flex flex-col items-center gap-1.5">
-                  <div className="w-full h-12 bg-[#18201C] rounded-md flex items-end p-0.5 justify-center overflow-hidden">
-                    <div
-                      className={cn(
-                        "w-full rounded-sm transition-all duration-300",
-                        d.isSelected ? "bg-[#22C55E]" : "bg-zinc-700"
-                      )}
-                      style={{
-                        height: `${Math.min(Math.max(Math.round((d.daySteps / maxSteps7d) * 100), 6), 100)}%`,
-                      }}
-                      title={`${d.dateKey}: ${d.daySteps.toLocaleString()} steps`}
-                    />
-                  </div>
-                  <span
+            <span className="text-xs font-semibold text-zinc-400">{stepsBurned} kcal</span>
+          </div>
+          <div className="flex items-end justify-between gap-1.5 bg-[#0e1411] p-2 rounded-xl border border-white/[0.04]">
+            {last7Days.map((d) => (
+              <div key={d.dateKey} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full h-8 bg-[#18201C] rounded flex items-end p-0.5 justify-center overflow-hidden">
+                  <div
                     className={cn(
-                      "text-[10px]",
-                      d.isSelected ? "text-[#22C55E] font-bold" : "text-zinc-500"
+                      "w-full rounded-xs transition-all duration-300",
+                      d.isSelected ? "bg-[#22C55E]" : "bg-zinc-700"
                     )}
-                  >
-                    {d.dayLetter}
-                  </span>
+                    style={{
+                      height: `${Math.min(Math.max(Math.round((d.daySteps / maxSteps7d) * 100), 8), 100)}%`,
+                    }}
+                    title={`${d.dateKey}: ${d.daySteps.toLocaleString()} steps`}
+                  />
                 </div>
-              ))}
-            </div>
-
-            <div className="pt-2 border-t border-white/[0.05] mt-3">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('steps');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Steps →
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          CARD 4: "Walk" (Expandable session list)
-         ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => toggleCard('walk')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Walk</span>
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'walk' && "rotate-180"
-              )}
-            />
-          </div>
-        </div>
-        <div className="text-4xl font-black text-white tracking-tight my-1">
-          {totalWalkKm.toFixed(1)} <span className="text-lg font-normal text-zinc-500">km</span>
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {totalWalkSteps > 0 ? `${totalWalkSteps.toLocaleString()} steps • ${totalWalkMin} min` : 'No walks logged'}
-        </div>
-
-        {/* Inline Expanded Walk Detail */}
-        {expandedCard === 'walk' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {walks.length === 0 ? (
-              <div className="text-sm text-zinc-500 py-1">No walks logged</div>
-            ) : (
-              <div className="divide-y divide-white/[0.05]">
-                {walks.map((w) => (
-                  <div key={w.id} className="py-1.5 flex items-center justify-between text-sm gap-2">
-                    <span className="font-medium text-white truncate">{w.title || 'Walk'}</span>
-                    <span className="text-xs text-zinc-400 shrink-0">
-                      {w.distanceKm} km • {w.durationMin} min • {w.calories} kcal
-                    </span>
-                  </div>
-                ))}
+                <span
+                  className={cn(
+                    "text-[10px]",
+                    d.isSelected ? "text-[#22C55E] font-bold" : "text-zinc-500"
+                  )}
+                >
+                  {d.dayLetter}
+                </span>
               </div>
-            )}
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('walk');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Walk →
-              </button>
-            </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 5: "Workout" (Expandable workout list)
+          CARD 4: Meals Card
+          Inline rows per meal type logged today + footer row
          ───────────────────────────────────────────────────────────── */}
       <div
-        onClick={() => toggleCard('workout')}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Workout</span>
-          <div className="flex items-center gap-1.5">
-            <Dumbbell className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'workout' && "rotate-180"
-              )}
-            />
-          </div>
-        </div>
-        <div className="text-4xl font-black text-white tracking-tight my-1">
-          {workoutBurned} <span className="text-lg font-normal text-zinc-500">kcal burned</span>
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {workouts.length > 0 ? `${workouts.length} session${workouts.length > 1 ? 's' : ''} logged` : '0 min active'}
-        </div>
-
-        {/* Inline Expanded Workout Detail */}
-        {expandedCard === 'workout' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {workouts.length === 0 ? (
-              <div className="text-sm text-zinc-500 py-1">No workouts logged</div>
-            ) : (
-              <div className="divide-y divide-white/[0.05]">
-                {workouts.map((w) => {
-                  const exerciseNames = w.exercises?.map(e => e.name).filter(Boolean).join(', ');
-                  return (
-                    <div key={w.id} className="py-1.5 text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-white truncate">{w.name}</span>
-                        <span className="text-xs text-zinc-400 shrink-0">
-                          {w.durationMin} min • {w.calories} kcal
-                        </span>
-                      </div>
-                      {exerciseNames ? (
-                        <div className="text-xs text-zinc-500 truncate mt-0.5">
-                          {exerciseNames}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('workout');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Workout →
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          CARD 6: "Meals" (Expandable meals grouped timeline)
-         ───────────────────────────────────────────────────────────── */}
-      <div
-        onClick={() => toggleCard('meals')}
+        onClick={() => onSelectTab('meals')}
         className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-zinc-400">Meals</span>
           <div className="flex items-center gap-1.5">
             <UtensilsCrossed className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-zinc-500 transition-transform duration-200",
-                expandedCard === 'meals' && "rotate-180"
-              )}
-            />
+            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
           </div>
         </div>
         <div className="text-4xl font-black text-white tracking-tight my-1">
-          {totalKcal} <span className="text-lg font-normal text-zinc-500">kcal</span>
+          {totalKcal.toLocaleString()} <span className="text-lg font-normal text-zinc-500">kcal</span>
         </div>
         <div className="text-[11px] text-zinc-500 font-medium">
           {totalProtein}g protein • {meals.length} logged
         </div>
 
-        {/* Inline Expanded Meals Detail */}
-        {expandedCard === 'meals' && (
-          <div className="pt-3 mt-3 border-t border-white/[0.05]">
-            {meals.length === 0 ? (
-              <div className="text-sm text-zinc-500 py-1">No meals logged yet</div>
-            ) : (
-              <div className="space-y-2">
-                {mealGroups.map((group) => {
-                  const groupMeals = meals.filter(m => m.mealType === group.type);
-                  if (groupMeals.length === 0) return null;
-                  return (
-                    <div key={group.type} className="pt-1 first:pt-0">
-                      <div className="text-[10px] uppercase font-semibold text-zinc-500 tracking-wider mb-1">
-                        {group.label}
-                      </div>
-                      <div className="divide-y divide-white/[0.05]">
-                        {groupMeals.map((m) => (
-                          <div key={m.id} className="py-1 flex items-center justify-between text-sm gap-2">
-                            <span className="truncate text-zinc-200">{m.description}</span>
-                            <span className="shrink-0 text-right whitespace-nowrap">
-                              <span className="text-white font-medium">{m.calories} kcal</span>
-                              <span className="text-zinc-500 text-xs ml-1.5">{m.protein}g protein</span>
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+        {/* Inline Meal Rows */}
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
+          {meals.length === 0 ? (
+            <div className="text-xs text-zinc-500 py-1 font-medium">No meals logged yet</div>
+          ) : (
+            <div className="space-y-1">
+              <div className="divide-y divide-white/[0.04]">
+                {loggedMealTypes.map((g) => (
+                  <div key={g.type} className="py-1.5 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Utensils className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                      <span className="font-semibold text-zinc-200 shrink-0">{g.label}</span>
+                      <span className="text-zinc-500 truncate">{g.foodItems}</span>
                     </div>
-                  );
-                })}
-
-                {/* Footer row */}
-                <div className="border-t border-white/[0.05] pt-2 mt-2 flex items-center justify-between text-xs font-semibold text-zinc-300">
-                  <span>TOTAL</span>
-                  <span>{totalKcal} kcal • {totalProtein}g protein</span>
-                </div>
+                    <span className="font-semibold text-white shrink-0 text-right ml-1">
+                      {g.kcal.toLocaleString()} kcal
+                    </span>
+                  </div>
+                ))}
               </div>
-            )}
 
-            <div className="pt-2 border-t border-white/[0.05] mt-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab('meals');
-                }}
-                className="text-xs text-[#22C55E] hover:underline inline-flex items-center gap-1 font-medium"
-              >
-                Open Meals →
-              </button>
+              {/* Footer row */}
+              <div className="pt-2 mt-1 border-t border-white/[0.06] flex items-center justify-between text-xs font-semibold text-zinc-300">
+                <span className="text-[11px] uppercase tracking-wider text-zinc-400">TOTAL</span>
+                <span className="text-zinc-200 font-bold">{totalKcal.toLocaleString()} kcal · {totalProtein}g protein</span>
+              </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          CARD 5: Workout Card
+          Inline list of today's workouts
+         ───────────────────────────────────────────────────────────── */}
+      <div
+        onClick={() => onSelectTab('workout')}
+        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-zinc-400">Workouts</span>
+          <div className="flex items-center gap-1.5">
+            <Dumbbell className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
+            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Details →</span>
           </div>
-        )}
+        </div>
+        <div className="text-4xl font-black text-white tracking-tight my-1">
+          {workoutBurned.toLocaleString()} <span className="text-lg font-normal text-zinc-500">kcal burned</span>
+        </div>
+        <div className="text-[11px] text-zinc-500 font-medium">
+          {workouts.length > 0 ? `${workouts.length} session${workouts.length > 1 ? 's' : ''} logged` : '0 min active'}
+        </div>
+
+        {/* Inline Workout List */}
+        <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
+          {workouts.length === 0 ? (
+            <div className="text-xs text-zinc-500 py-1 font-medium">No workouts logged yet</div>
+          ) : (
+            <div className="divide-y divide-white/[0.04]">
+              {workouts.map((w) => {
+                const exerciseNames = w.exercises?.map(e => e.name).filter(Boolean).join(', ');
+                return (
+                  <div key={w.id} className="py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Dumbbell className="w-3.5 h-3.5 text-[#22C55E]/70 shrink-0" />
+                        <span className="font-semibold text-zinc-200 truncate">{w.name}</span>
+                        {w.time && (
+                          <span className="text-[11px] text-zinc-500 shrink-0">{w.time}</span>
+                        )}
+                      </div>
+                      <span className="text-xs font-semibold text-zinc-300 shrink-0 text-right ml-1">
+                        {w.durationMin}m · {w.calories} kcal
+                      </span>
+                    </div>
+                    {exerciseNames && (
+                      <div className="pl-5.5 text-[11px] text-zinc-500 truncate mt-0.5">
+                        {exerciseNames}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

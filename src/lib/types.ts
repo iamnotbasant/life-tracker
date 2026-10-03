@@ -104,4 +104,4 @@ export interface AppState {
   onboardingCompleted: boolean;
 }
 
-export type TabType = 'home' | 'steps' | 'walk' | 'workout' | 'meals' | 'calories' | 'weight' | 'history' | 'settings';
+export type TabType = 'home' | 'steps' | 'workout' | 'meals' | 'calories' | 'weight' | 'history' | 'settings';

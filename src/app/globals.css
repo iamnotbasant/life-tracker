@@ -47,16 +47,6 @@ body {
   transform: scale(0.985);
 }
 
-/* Diagonal stripe pattern for Walk Progress bar (matching ref-03) */
-.walk-striped-bar {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.2) 6px,
-    transparent 6px,
-    transparent 12px
-  );
-}
 
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
