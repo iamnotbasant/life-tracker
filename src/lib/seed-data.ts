@@ -1,4 +1,5 @@
-import { AppState, DayData, UserProfile, WeightEntry } from './types';
+import { AppState, DayData, UserProfile, WeightEntry, WorkoutEntry } from './types';
+import { calculateDayPoints } from './points';
 
 export const DEFAULT_PROFILE: UserProfile = {
   name: 'Basant',
@@ -18,11 +19,41 @@ export const DEFAULT_PROFILE: UserProfile = {
   stepCalorieFactor: 0.043, // 43 kcal per 1000 steps at 48.9 kg
 };
 
+export const SEED_WORKOUT_OCT_01: WorkoutEntry = {
+  id: 'seed-wo-1',
+  name: 'Calisthenics',
+  type: 'calisthenics',
+  time: '18:21',
+  durationMin: 5,
+  calories: 0,
+  exercises: [
+    { name: 'Standard Push-ups', sets: 3, reps: 1 },
+    { name: 'Incline Push-ups', sets: 3, reps: 1 },
+    { name: 'Chair Dips', sets: 3, reps: 1 },
+    { name: 'Pike Push-ups', sets: 3, reps: 1 },
+  ],
+};
+
+export const SEED_WORKOUT_OCT_02: WorkoutEntry = {
+  id: 'seed-wo-2',
+  name: 'Calisthenics',
+  type: 'calisthenics',
+  time: '18:48',
+  durationMin: 8,
+  calories: 0,
+  exercises: [
+    { name: 'Pull-ups', sets: 3, reps: 1 },
+    { name: 'Chin-ups', sets: 3, reps: 1 },
+    { name: 'Bar Hang', sets: 3, reps: 5, notes: '5 seconds per set' },
+    { name: 'Bicep Curls', sets: 3, reps: 1, weight: '3 kg' },
+  ],
+};
+
 export function getInitialSeedData(): AppState {
   const days: Record<string, DayData> = {};
 
   // Exact backup for 2026-10-01
-  days['2026-10-01'] = {
+  const day1: DayData = {
     date: '2026-10-01',
     steps: 1697,
     sleep: {
@@ -57,28 +88,16 @@ export function getInitialSeedData(): AppState {
       },
     ],
     walks: [],
-    workouts: [],
-    points: -13,
-    pointsBreakdown: {
-      caloriesPts: -8,
-      proteinPts: -5,
-      stepsPts: -5,
-      workoutPts: 0,
-      sleepPts: 5,
-      weightPts: 0,
-      streakPts: 0,
-      total: -13,
-      notes: [
-        'Calories: 1815 kcal (-8 pts)',
-        'Protein: 62g (-5 pts)',
-        'Steps: 1697 (-5 pts)',
-        'Sleep: 7h (+5 pts)',
-      ],
-    },
+    workouts: [SEED_WORKOUT_OCT_01],
+    points: 0,
   };
+  const d1Points = calculateDayPoints(day1, DEFAULT_PROFILE, 0);
+  day1.points = d1Points.total;
+  day1.pointsBreakdown = d1Points;
+  days['2026-10-01'] = day1;
 
   // Exact backup for 2026-10-02
-  days['2026-10-02'] = {
+  const day2: DayData = {
     date: '2026-10-02',
     steps: 0,
     stepsNote: 'not logged',
@@ -106,25 +125,13 @@ export function getInitialSeedData(): AppState {
       },
     ],
     walks: [],
-    workouts: [],
-    points: -23,
-    pointsBreakdown: {
-      caloriesPts: -8,
-      proteinPts: -5,
-      stepsPts: 0,
-      workoutPts: 0,
-      sleepPts: -10,
-      weightPts: 0,
-      streakPts: 0,
-      total: -23,
-      notes: [
-        'Calories: 1155 kcal (-8 pts)',
-        'Protein: 37g (-5 pts)',
-        'Steps: Not logged (0 pts)',
-        'Sleep: 4.5h (-10 pts, short duration & late bedtime)',
-      ],
-    },
+    workouts: [SEED_WORKOUT_OCT_02],
+    points: 0,
   };
+  const d2Points = calculateDayPoints(day2, DEFAULT_PROFILE, 0);
+  day2.points = d2Points.total;
+  day2.pointsBreakdown = d2Points;
+  days['2026-10-02'] = day2;
 
   // 2026-10-03 (today) — starts empty; the user logs their own data
   days['2026-10-03'] = {

@@ -1,5 +1,5 @@
 import { AppState, DayData, UserProfile, WeightEntry } from './types';
-import { getInitialSeedData } from './seed-data';
+import { getInitialSeedData, SEED_WORKOUT_OCT_01, SEED_WORKOUT_OCT_02 } from './seed-data';
 import { calculateDayPoints } from './points';
 
 const STORAGE_KEY = 'life_tracker_app_state_v1';
@@ -73,6 +73,66 @@ function migrateFabricatedSeed(state: AppState): { state: AppState; changed: boo
         /* keep existing points on failure */
       }
       days[date] = cleaned;
+      changed = true;
+    }
+  }
+
+  // Backfill honest seed workouts for Oct 1 & Oct 2 if workouts are empty and seed meals are present
+  const day1 = days['2026-10-01'];
+  if (day1) {
+    const workouts = day1.workouts || [];
+    const mealIds = (day1.meals || []).map((m) => m.id);
+    const hasSeedMeals =
+      mealIds.includes('seed-meal-1') &&
+      mealIds.includes('seed-meal-2') &&
+      mealIds.includes('seed-meal-3');
+    if (workouts.length === 0 && hasSeedMeals) {
+      const updatedDay1: DayData = {
+        ...day1,
+        workouts: [
+          {
+            ...SEED_WORKOUT_OCT_01,
+            exercises: SEED_WORKOUT_OCT_01.exercises ? [...SEED_WORKOUT_OCT_01.exercises] : undefined,
+          },
+        ],
+      };
+      try {
+        const bd = calculateDayPoints(updatedDay1, state.profile);
+        updatedDay1.points = bd.total;
+        updatedDay1.pointsBreakdown = bd;
+      } catch {
+        /* keep existing points on failure */
+      }
+      days['2026-10-01'] = updatedDay1;
+      changed = true;
+    }
+  }
+
+  const day2 = days['2026-10-02'];
+  if (day2) {
+    const workouts = day2.workouts || [];
+    const mealIds = (day2.meals || []).map((m) => m.id);
+    const hasSeedMeals =
+      mealIds.includes('seed-meal-4') &&
+      mealIds.includes('seed-meal-5');
+    if (workouts.length === 0 && hasSeedMeals) {
+      const updatedDay2: DayData = {
+        ...day2,
+        workouts: [
+          {
+            ...SEED_WORKOUT_OCT_02,
+            exercises: SEED_WORKOUT_OCT_02.exercises ? [...SEED_WORKOUT_OCT_02.exercises] : undefined,
+          },
+        ],
+      };
+      try {
+        const bd = calculateDayPoints(updatedDay2, state.profile);
+        updatedDay2.points = bd.total;
+        updatedDay2.pointsBreakdown = bd;
+      } catch {
+        /* keep existing points on failure */
+      }
+      days['2026-10-02'] = updatedDay2;
       changed = true;
     }
   }
