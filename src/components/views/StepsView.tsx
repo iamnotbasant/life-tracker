@@ -5,17 +5,20 @@ import { Plus } from 'lucide-react';
 import { AppState } from '../../lib/types';
 import { estimateStepsCalories } from '../../lib/points';
 import { formatDateLabel } from '../../lib/utils';
+import { DateNavigator } from '../DateNavigator';
 
 interface StepsViewProps {
   state: AppState;
   onUpdateSteps: (date: string, steps: number, note?: string) => void;
   onOpenQuickLog: (tab: 'steps') => void;
+  onDateChange?: (newDate: string) => void;
 }
 
 export const StepsView: React.FC<StepsViewProps> = ({
   state,
   onUpdateSteps,
   onOpenQuickLog,
+  onDateChange,
 }) => {
   const { profile, activeDate, days } = state;
   const currentDay = days[activeDate] || {
@@ -72,10 +75,10 @@ export const StepsView: React.FC<StepsViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           SCREEN HEADER: Title top-left + circular icon button top-right
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      <div className="flex items-center justify-between pt-2 pb-1">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Steps</h1>
-          <p className="text-xs text-zinc-400 mt-0.5">{formatDateLabel(activeDate)}</p>
+          <p className="text-xs text-zinc-400 mt-0.5">Daily step tracking</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -89,6 +92,9 @@ export const StepsView: React.FC<StepsViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Date Navigator */}
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
 
       {/* ─────────────────────────────────────────────────────────────
           CARD 1: Big Number Card

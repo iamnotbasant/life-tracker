@@ -4,12 +4,14 @@ import React from 'react';
 import { UtensilsCrossed, Plus, Trash2, Clock, Sparkles } from 'lucide-react';
 import { AppState, MealEntry, MealType } from '../../lib/types';
 import { formatDateLabel } from '../../lib/utils';
+import { DateNavigator } from '../DateNavigator';
 
 interface MealsViewProps {
   state: AppState;
   onAddMeal: (meal: MealEntry) => void;
   onDeleteMeal: (mealId: string) => void;
   onOpenQuickLog: (tab: 'meal') => void;
+  onDateChange?: (newDate: string) => void;
 }
 
 export const MealsView: React.FC<MealsViewProps> = ({
@@ -17,6 +19,7 @@ export const MealsView: React.FC<MealsViewProps> = ({
   onAddMeal,
   onDeleteMeal,
   onOpenQuickLog,
+  onDateChange,
 }) => {
   const { profile, activeDate, days } = state;
   const currentDay = days[activeDate] || {
@@ -66,10 +69,10 @@ export const MealsView: React.FC<MealsViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           SCREEN HEADER: Title top-left + circular icon button top-right
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      <div className="flex items-center justify-between pt-2 pb-1">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Meals</h1>
-          <p className="text-xs text-zinc-400 mt-0.5">{formatDateLabel(activeDate)}</p>
+          <p className="text-xs text-zinc-400 mt-0.5">Nutrition & macro tracking</p>
         </div>
 
         <button
@@ -81,6 +84,9 @@ export const MealsView: React.FC<MealsViewProps> = ({
           <Plus className="w-5 h-5 text-[#22C55E]" />
         </button>
       </div>
+
+      {/* Date Navigator */}
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
 
       {/* ─────────────────────────────────────────────────────────────
           2 STAT CARDS (kcal bar, protein bar)

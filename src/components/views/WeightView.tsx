@@ -4,18 +4,21 @@ import React from 'react';
 import { Plus, Scale } from 'lucide-react';
 import { AppState } from '../../lib/types';
 import { formatDateLabel } from '../../lib/utils';
+import { DateNavigator } from '../DateNavigator';
 
 interface WeightViewProps {
   state: AppState;
   onLogWeight: (weight: number, note?: string) => void;
   onOpenQuickLog: (tab: 'weight') => void;
   onSelectTab?: (tab: any) => void;
+  onDateChange?: (newDate: string) => void;
 }
 
 export const WeightView: React.FC<WeightViewProps> = ({
   state,
   onOpenQuickLog,
   onSelectTab,
+  onDateChange,
 }) => {
   const { profile, activeDate, weightHistory } = state;
 
@@ -29,7 +32,7 @@ export const WeightView: React.FC<WeightViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           SCREEN HEADER: Title top-left + circular icon button top-right
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      <div className="flex items-center justify-between pt-2 pb-1">
         <div className="flex items-center gap-2">
           {onSelectTab && (
             <button
@@ -43,7 +46,7 @@ export const WeightView: React.FC<WeightViewProps> = ({
           )}
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Weight</h1>
-            <p className="text-xs text-zinc-400 mt-0.5">{formatDateLabel(activeDate)}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Mass tracking & trend</p>
           </div>
         </div>
 
@@ -56,6 +59,9 @@ export const WeightView: React.FC<WeightViewProps> = ({
           <Plus className="w-5 h-5 text-[#22C55E]" />
         </button>
       </div>
+
+      {/* Date Navigator */}
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
 
       {/* ─────────────────────────────────────────────────────────────
           CARD 1: Big-Number Card (48.9 kg)

@@ -11,12 +11,14 @@ import {
 } from 'lucide-react';
 import { AppState } from '../../lib/types';
 import { YearlyHeatmap } from '../YearlyHeatmap';
+import { DateNavigator } from '../DateNavigator';
 
 interface HistoryViewProps {
   state: AppState;
+  onDateChange?: (newDate: string) => void;
 }
 
-export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
+export const HistoryView: React.FC<HistoryViewProps> = ({ state, onDateChange }) => {
   const { profile, activeDate, days } = state;
   const [viewFilter, setViewFilter] = useState<'all' | 'fitness' | 'nutrition'>('all');
 
@@ -117,7 +119,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
       {/* ─────────────────────────────────────────────────────────────
           SCREEN HEADER
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      <div className="flex items-center justify-between pt-2 pb-1">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Habits</h1>
           <p className="text-xs text-zinc-400 mt-0.5">Green consistency grids</p>
@@ -140,6 +142,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ state }) => {
           ))}
         </div>
       </div>
+
+      {/* Date Navigator */}
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
 
       {/* ─────────────────────────────────────────────────────────────
           HABIT CARDS WITH GREEN GITHUB-STYLE HEATMAP GRIDS

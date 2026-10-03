@@ -4,13 +4,15 @@ import React from 'react';
 import { AppState } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
 import { formatDateLabel } from '../../lib/utils';
+import { DateNavigator } from '../DateNavigator';
 
 interface CaloriesViewProps {
   state: AppState;
   onSelectTab?: (tab: any) => void;
+  onDateChange?: (newDate: string) => void;
 }
 
-export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab }) => {
+export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab, onDateChange }) => {
   const { profile, activeDate, days } = state;
   const currentDay = days[activeDate] || {
     date: activeDate,
@@ -49,7 +51,7 @@ export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab }
       {/* ─────────────────────────────────────────────────────────────
           SCREEN HEADER
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      <div className="flex items-center justify-between pt-2 pb-1">
         <div className="flex items-center gap-2">
           {onSelectTab && (
             <button
@@ -63,10 +65,13 @@ export const CaloriesView: React.FC<CaloriesViewProps> = ({ state, onSelectTab }
           )}
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Calories</h1>
-            <p className="text-xs text-zinc-400 mt-0.5">{formatDateLabel(activeDate)}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Energy balance & expenditure</p>
           </div>
         </div>
       </div>
+
+      {/* Date Navigator */}
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
 
       {/* ─────────────────────────────────────────────────────────────
           CARD 1: Consumed

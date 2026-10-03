@@ -1,21 +1,25 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
   Flame,
   Footprints,
   Dumbbell,
   UtensilsCrossed,
   Zap,
   Moon,
+  Scale,
+  Coffee,
+  Salad,
+  Cookie,
+  Soup,
 } from 'lucide-react';
 import { AppState, TabType, MealType, SleepData } from '../../lib/types';
 import { calculateBMR, estimateStepsCalories } from '../../lib/points';
 import { formatDateLabel, formatTime12h, calculateSleepHours, cn } from '../../lib/utils';
 import { SleepModal } from '../SleepModal';
+import { WeightModal } from '../WeightModal';
+import { DateNavigator } from '../DateNavigator';
 
 interface HomeViewProps {
   state: AppState;
@@ -25,7 +29,16 @@ interface HomeViewProps {
   streak: number;
   onDateChange?: (newDate: string) => void;
   onUpdateSleep?: (dateStr: string, sleep?: SleepData) => void;
+  onLogWeight?: (weight: number, dateStr?: string) => void;
+  onClearWeight?: (dateStr: string) => void;
 }
+
+const mealIcons: Record<MealType, React.ElementType> = {
+  breakfast: Coffee,
+  lunch: Salad,
+  snack: Cookie,
+  dinner: Soup,
+};
 
 export const HomeView: React.FC<HomeViewProps> = ({
   state,
@@ -34,6 +47,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   streak,
   onDateChange,
   onUpdateSleep,
+  onLogWeight,
+  onClearWeight,
 }) => {
   const { profile, activeDate, days } = state;
   const day = days[activeDate] || {
@@ -45,8 +60,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     points: 0,
   };
 
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const [isSleepModalOpen, setIsSleepModalOpen] = useState(false);
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
 
   // Calculations for current active date
   const steps = day.steps || 0;
@@ -85,43 +100,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   // All-time total points
   const totalAllTimePoints = Object.values(days).reduce((sum, d) => sum + (d.points || 0), 0);
+  const totalPointsLabel = totalAllTimePoints < 0
+    ? `−${Math.abs(totalAllTimePoints).toLocaleString()} total`
+    : `${totalAllTimePoints.toLocaleString()} total`;
 
   const initial = profile.name ? profile.name.trim().charAt(0).toUpperCase() : 'B';
-
-  const handlePrevDay = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (!onDateChange) return;
-    const [y, m, d] = activeDate.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    date.setDate(date.getDate() - 1);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    onDateChange(`${yyyy}-${mm}-${dd}`);
-  };
-
-  const handleNextDay = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (!onDateChange) return;
-    const [y, m, d] = activeDate.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    date.setDate(date.getDate() + 1);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    onDateChange(`${yyyy}-${mm}-${dd}`);
-  };
-
-  const handleOpenDatePicker = () => {
-    if (!dateInputRef.current) return;
-    try {
-      if (typeof dateInputRef.current.showPicker === 'function') {
-        dateInputRef.current.showPicker();
-        return;
-      }
-    } catch {}
-    dateInputRef.current.focus();
-  };
 
   const isToday = activeDate === '2026-10-03' || activeDate === new Date().toISOString().split('T')[0];
   const dateLabel = isToday ? `Today, ${formatDateLabel(activeDate)}` : formatDateLabel(activeDate);
@@ -142,6 +125,46 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return { dateKey, daySteps, dayLetter, isSelected };
   });
   const maxSteps7d = Math.max(stepsGoal, ...last7Days.map(d => d.daySteps), 1);
+
+  // 7-day points for glowing Points card sparkline
+  const points7Days = Array.from({ length: 7 }, (_, i) => {
+    const [y, m, d] = activeDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() - (6 - i));
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateKey = `${yyyy}-${mm}-${dd}`;
+    const pts = days[dateKey]?.points || 0;
+    return { dateKey, pts, isSelected: dateKey === activeDate };
+  });
+  const maxPts = Math.max(25, ...points7Days.map(p => Math.abs(p.pts)));
+
+  // Weight card calculations
+  const sortedWeightHistory = [...state.weightHistory].sort((a, b) => a.date.localeCompare(b.date));
+  const latestWeightEntry = sortedWeightHistory.length > 0 ? sortedWeightHistory[sortedWeightHistory.length - 1] : null;
+  const prevWeightEntry = sortedWeightHistory.length > 1 ? sortedWeightHistory[sortedWeightHistory.length - 2] : null;
+
+  const currentWeightVal = latestWeightEntry?.weightKg ?? profile.weightKg;
+  const displayWeight = currentWeightVal !== undefined ? `${currentWeightVal}` : '—';
+
+  let weightCaption = 'No weight logged yet';
+  if (latestWeightEntry && prevWeightEntry) {
+    const diff = +(latestWeightEntry.weightKg - prevWeightEntry.weightKg).toFixed(1);
+    const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
+    const d1 = new Date(prevWeightEntry.date).getTime();
+    const d2 = new Date(latestWeightEntry.date).getTime();
+    const daysDiff = Math.abs(d2 - d1) / (1000 * 3600 * 24);
+    if (daysDiff <= 7) {
+      weightCaption = `${diffStr} kg this week`;
+    } else {
+      weightCaption = `${diffStr} kg vs previous`;
+    }
+  } else if (latestWeightEntry) {
+    weightCaption = `last logged ${formatDateLabel(latestWeightEntry.date)}`;
+  }
+
+  const currentDayWeight = day.weight ?? state.weightHistory.find(w => w.date === activeDate)?.weightKg;
 
   // Grouped meals for inline meal rows
   const mealTypes: { type: MealType; label: string }[] = [
@@ -191,73 +214,70 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           PROMINENT DATE NAVIGATOR: [< 48px] [ Date Pill + Picker ] [> 48px]
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 pt-1 pb-1">
-        <button
-          type="button"
-          onClick={handlePrevDay}
-          className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-2xl bg-[#121815] border border-white/[0.05] hover:border-[#22C55E]/40 hover:text-white text-zinc-400 flex items-center justify-center transition-all active:scale-95 shadow-sm"
-          aria-label="Previous day"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="relative flex-1">
-          <button
-            type="button"
-            onClick={handleOpenDatePicker}
-            className="w-full h-12 min-h-[48px] px-4 rounded-2xl bg-[#121815] border border-white/[0.05] hover:border-[#22C55E]/40 transition-all flex items-center justify-center gap-2 active:scale-[0.99] shadow-sm text-center group"
-            aria-label="Select date"
-          >
-            <Calendar className="w-4 h-4 text-[#22C55E]/80 group-hover:text-[#22C55E] transition-colors shrink-0" />
-            <span className="text-sm font-semibold text-white tracking-wide">
-              {dateLabel}
-            </span>
-          </button>
-          <input
-            ref={dateInputRef}
-            type="date"
-            value={activeDate}
-            onChange={(e) => {
-              if (e.target.value && onDateChange) {
-                onDateChange(e.target.value);
-              }
-            }}
-            className="sr-only"
-            tabIndex={-1}
-            aria-label="Select date"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleNextDay}
-          className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-2xl bg-[#121815] border border-white/[0.05] hover:border-[#22C55E]/40 hover:text-white text-zinc-400 flex items-center justify-center transition-all active:scale-95 shadow-sm"
-          aria-label="Next day"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
 
       {/* ─────────────────────────────────────────────────────────────
-          CARD 1: Points Card (VERY TOP after Date Navigator)
-          Big green today's-points number + total caption, tap opens scoring-guide modal
+          CARD 1: Points Card (Glowing Redesign)
+          Dark card with emerald glow background, faint bars, dynamic "+22",
+          "−14 total", flame in glowing emerald circle, "Guide →" pill,
+          and subtle mini bar sparkline.
          ───────────────────────────────────────────────────────────── */}
       <div
         onClick={onOpenPointsInfo}
-        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+        className="relative overflow-hidden rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group border border-[#22C55E]/30 bg-[#0E1512]"
+        style={{
+          backgroundImage: "url('/points-card-bg.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          boxShadow: '0 0 24px rgba(34, 197, 94, 0.25)',
+        }}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-400">Today's Points</span>
-          <div className="flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-[#22C55E]/70 group-hover:text-[#22C55E] transition-colors" />
-            <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">Guide →</span>
+        <div className="relative z-10">
+          {/* Top row: Label + Guide pill */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-300">Today's Points</span>
+            <span className="text-[11px] font-semibold text-[#22C55E] bg-[#22C55E]/15 border border-[#22C55E]/30 px-2.5 py-0.5 rounded-full group-hover:bg-[#22C55E]/25 group-hover:border-[#22C55E]/40 transition-all">
+              Guide →
+            </span>
           </div>
-        </div>
-        <div className="text-5xl font-black text-[#22C55E] tracking-tight my-1">
-          {day.points >= 0 ? `+${day.points}` : day.points}
-        </div>
-        <div className="text-[11px] text-zinc-500 font-medium">
-          {totalAllTimePoints.toLocaleString()} total
+
+          {/* Middle/Main row: big number + caption on left, flame circle + sparkline on right */}
+          <div className="flex items-end justify-between mt-2">
+            <div>
+              <div className="text-5xl font-black text-[#22C55E] tracking-tight drop-shadow-[0_2px_12px_rgba(34,197,94,0.4)]">
+                {day.points >= 0 ? `+${day.points}` : `−${Math.abs(day.points)}`}
+              </div>
+              <div className="text-[11px] text-zinc-400 font-medium mt-1">
+                {totalPointsLabel}
+              </div>
+            </div>
+
+            {/* Right side: Flame in glowing emerald circle + subtle mini bar sparkline */}
+            <div className="flex flex-col items-end gap-2 pb-0.5">
+              <div className="w-12 h-12 rounded-full bg-[#22C55E]/20 border border-[#22C55E]/40 flex items-center justify-center shadow-[0_0_18px_rgba(34,197,94,0.35)] group-hover:scale-105 transition-transform shrink-0">
+                <Flame className="w-6 h-6 text-[#22C55E] fill-[#22C55E]/20" />
+              </div>
+              {/* Subtle mini bar sparkline */}
+              <div className="flex items-end gap-1 h-5 pt-0.5 opacity-70">
+                {points7Days.map((p) => {
+                  const heightPercent = Math.min(Math.max(Math.round((Math.abs(p.pts) / maxPts) * 100), 20), 100);
+                  return (
+                    <div
+                      key={p.dateKey}
+                      className={cn(
+                        "w-1.5 rounded-full transition-all duration-300",
+                        p.isSelected
+                          ? "bg-[#22C55E] shadow-[0_0_6px_#22C55E]"
+                          : (p.pts > 0 ? "bg-[#22C55E]/60" : "bg-zinc-600/50")
+                      )}
+                      style={{ height: `${heightPercent}%` }}
+                      title={`${p.dateKey}: ${p.pts} pts`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -361,7 +381,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="pt-2.5 mt-2.5 border-t border-white/[0.06]">
           <div className="flex items-center justify-between text-xs mb-2 gap-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-              <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
               <span className="text-xs font-semibold text-zinc-300">Last 7 Days</span>
               <span className="text-[11px] text-zinc-500">· avg {Math.round(last7Days.reduce((s, d) => s + d.daySteps, 0) / 7).toLocaleString()}</span>
             </div>
@@ -398,7 +417,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* ─────────────────────────────────────────────────────────────
           CARD 5: Meals Card
-          Inline rows per meal type logged today + footer row
+          Inline rows per meal type logged today (with meal-type icons) + footer row
          ───────────────────────────────────────────────────────────── */}
       <div
         onClick={() => onSelectTab('meals')}
@@ -422,25 +441,31 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ) : (
             <div>
               <div className="divide-y divide-white/[0.06]">
-                {loggedMealTypes.map((g) => (
-                  <div key={g.type} className="py-3.5 first:pt-1">
-                    {/* Top line: small muted meal-type label in tiny caps + kcal bold right-aligned on SAME line */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                        {g.label}
-                      </span>
-                      <span className="text-xs font-bold text-white shrink-0">
-                        {g.kcal.toLocaleString()} kcal
-                      </span>
+                {loggedMealTypes.map((g) => {
+                  const MealIcon = mealIcons[g.type];
+                  return (
+                    <div key={g.type} className="py-3.5 first:pt-1">
+                      {/* Top line: meal icon + small muted meal-type label in tiny caps + kcal bold right-aligned on SAME line */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {MealIcon && <MealIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />}
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                            {g.label}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold text-white shrink-0">
+                          {g.kcal.toLocaleString()} kcal
+                        </span>
+                      </div>
+                      {/* Full food description below in clean, readable body text */}
+                      {g.foodItems && (
+                        <p className="text-[13px] text-zinc-200 leading-relaxed mt-1.5 break-words">
+                          {g.foodItems}
+                        </p>
+                      )}
                     </div>
-                    {/* Full food description below in clean, readable body text */}
-                    {g.foodItems && (
-                      <p className="text-[13px] text-zinc-200 leading-relaxed mt-1.5 break-words">
-                        {g.foodItems}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* TOTAL footer row with more top margin so it feels separated */}
@@ -511,6 +536,28 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
+          CARD 7: Weight Card (NEW at the END of card order)
+          Display-only card: big value = current weight from weightHistory (latest entry),
+          small muted caption = change vs previous entry.
+          NO points UI. Tapping opens WeightModal.
+         ───────────────────────────────────────────────────────────── */}
+      <div
+        onClick={() => setIsWeightModalOpen(true)}
+        className="bg-[#121815] border border-white/[0.05] hover:border-white/10 rounded-2xl p-5 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-zinc-400">Weight</span>
+          <Scale className="w-4 h-4 text-zinc-500 group-hover:text-[#22C55E] transition-colors" />
+        </div>
+        <div className="text-4xl font-black text-white tracking-tight my-1">
+          {displayWeight} <span className="text-lg font-normal text-zinc-500">kg</span>
+        </div>
+        <div className="text-[11px] text-zinc-500 font-medium">
+          {weightCaption}
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
           Sleep Modal Bottom-Sheet
          ───────────────────────────────────────────────────────────── */}
       <SleepModal
@@ -526,6 +573,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
         onClearSleep={() => {
           if (onUpdateSleep) {
             onUpdateSleep(activeDate, undefined);
+          }
+        }}
+      />
+
+      {/* ─────────────────────────────────────────────────────────────
+          Weight Modal Bottom-Sheet
+         ───────────────────────────────────────────────────────────── */}
+      <WeightModal
+        isOpen={isWeightModalOpen}
+        onClose={() => setIsWeightModalOpen(false)}
+        currentWeight={currentDayWeight}
+        dateLabel={dateLabel}
+        onSaveWeight={(newWeight) => {
+          if (onLogWeight) {
+            onLogWeight(newWeight, activeDate);
+          }
+        }}
+        onClearWeight={() => {
+          if (onClearWeight) {
+            onClearWeight(activeDate);
           }
         }}
       />

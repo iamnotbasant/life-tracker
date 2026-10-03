@@ -129,7 +129,6 @@ export default function App() {
     }));
   };
 
-
   const handleAddWorkout = (workout: WorkoutEntry) => {
     updateDayData(activeDate, d => ({
       ...d,
@@ -144,8 +143,12 @@ export default function App() {
     }));
   };
 
-  const handleLogWeight = (weight: number, note?: string) => {
-    updateDayData(activeDate, d => ({
+  const handleLogWeight = (weight: number, noteOrDate?: string, maybeNote?: string) => {
+    const isDate = noteOrDate && /^\d{4}-\d{2}-\d{2}$/.test(noteOrDate);
+    const targetDate = isDate ? noteOrDate : activeDate;
+    const note = isDate ? maybeNote : noteOrDate;
+
+    updateDayData(targetDate, d => ({
       ...d,
       weight,
     }));
@@ -153,8 +156,8 @@ export default function App() {
     setState(prev => {
       if (!prev) return prev;
       const history = [...prev.weightHistory];
-      const existingIdx = history.findIndex(w => w.date === activeDate);
-      const newEntry = { id: `w-${Date.now()}`, date: activeDate, weightKg: weight, note };
+      const existingIdx = history.findIndex(w => w.date === targetDate);
+      const newEntry = { id: `w-${Date.now()}`, date: targetDate, weightKg: weight, note };
 
       if (existingIdx >= 0) {
         history[existingIdx] = newEntry;
@@ -163,9 +166,30 @@ export default function App() {
       }
       history.sort((a, b) => a.date.localeCompare(b.date));
 
+      const latestEntry = history[history.length - 1];
+
       return {
         ...prev,
-        profile: { ...prev.profile, weightKg: weight },
+        profile: { ...prev.profile, weightKg: latestEntry ? latestEntry.weightKg : weight },
+        weightHistory: history,
+      };
+    });
+  };
+
+  const handleClearWeight = (dateStr?: string) => {
+    const targetDate = dateStr || activeDate;
+    updateDayData(targetDate, d => ({
+      ...d,
+      weight: undefined,
+    }));
+
+    setState(prev => {
+      if (!prev) return prev;
+      const history = prev.weightHistory.filter(w => w.date !== targetDate);
+      const latestWeight = history.length > 0 ? history[history.length - 1].weightKg : prev.profile.weightKg;
+      return {
+        ...prev,
+        profile: { ...prev.profile, weightKg: latestWeight },
         weightHistory: history,
       };
     });
@@ -202,6 +226,8 @@ export default function App() {
             streak={streak}
             onDateChange={handleDateChange}
             onUpdateSleep={handleUpdateSleep}
+            onLogWeight={handleLogWeight}
+            onClearWeight={handleClearWeight}
           />
         )}
 
@@ -210,6 +236,7 @@ export default function App() {
             state={state}
             onUpdateSteps={handleUpdateSteps}
             onOpenQuickLog={() => handleOpenQuickLog('steps')}
+            onDateChange={handleDateChange}
           />
         )}
 
@@ -219,6 +246,7 @@ export default function App() {
             onAddWorkout={handleAddWorkout}
             onDeleteWorkout={handleDeleteWorkout}
             onOpenQuickLog={() => handleOpenQuickLog('workout')}
+            onDateChange={handleDateChange}
           />
         )}
 
@@ -228,6 +256,7 @@ export default function App() {
             onAddMeal={handleAddMeal}
             onDeleteMeal={handleDeleteMeal}
             onOpenQuickLog={() => handleOpenQuickLog('meal')}
+            onDateChange={handleDateChange}
           />
         )}
 
@@ -235,6 +264,7 @@ export default function App() {
           <CaloriesView
             state={state}
             onSelectTab={setCurrentTab}
+            onDateChange={handleDateChange}
           />
         )}
 
@@ -244,11 +274,15 @@ export default function App() {
             onLogWeight={handleLogWeight}
             onOpenQuickLog={() => handleOpenQuickLog('weight')}
             onSelectTab={setCurrentTab}
+            onDateChange={handleDateChange}
           />
         )}
 
         {currentTab === 'history' && (
-          <HistoryView state={state} />
+          <HistoryView
+            state={state}
+            onDateChange={handleDateChange}
+          />
         )}
 
         {currentTab === 'settings' && (

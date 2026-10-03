@@ -4,12 +4,14 @@ import React from 'react';
 import { Dumbbell, Plus, Trash2, SlidersHorizontal, Scale } from 'lucide-react';
 import { AppState, WorkoutEntry } from '../../lib/types';
 import { formatDateLabel } from '../../lib/utils';
+import { DateNavigator } from '../DateNavigator';
 
 interface WorkoutViewProps {
   state: AppState;
   onAddWorkout: (workout: WorkoutEntry) => void;
   onDeleteWorkout: (workoutId: string) => void;
   onOpenQuickLog: (tab: 'workout') => void;
+  onDateChange?: (newDate: string) => void;
 }
 
 export const WorkoutView: React.FC<WorkoutViewProps> = ({
@@ -17,6 +19,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
   onAddWorkout,
   onDeleteWorkout,
   onOpenQuickLog,
+  onDateChange,
 }) => {
   const { profile, activeDate, days } = state;
   const currentDay = days[activeDate] || {
@@ -50,13 +53,12 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
   return (
     <div className="space-y-3 pb-28 max-w-md mx-auto">
       {/* ─────────────────────────────────────────────────────────────
-          SCREEN HEADER: EXACTLY LIKE v3-01
-          Title top-left "Workouts" + 2 circular icon buttons top-right
+          SCREEN HEADER: Title top-left + 2 circular icon buttons top-right
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      <div className="flex items-center justify-between pt-2 pb-1">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Workouts</h1>
-          <p className="text-xs text-zinc-400 mt-0.5">{formatDateLabel(activeDate)}</p>
+          <p className="text-xs text-zinc-400 mt-0.5">Training & calisthenics log</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -79,17 +81,22 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         </div>
       </div>
 
+      {/* Date Navigator */}
+      <DateNavigator currentDate={activeDate} onDateChange={onDateChange} />
+
       {/* ─────────────────────────────────────────────────────────────
           CARD 1: Full-width card (Matching v3-01 "Weight" top card)
          ───────────────────────────────────────────────────────────── */}
       <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex items-center justify-between">
         <div>
           <div className="text-sm font-semibold text-white">Weight</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">Logged 1 min ago</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">
+            {currentDay.weight ? `${formatDateLabel(activeDate)} weight` : 'Current target body weight'}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-3xl font-black text-white tracking-tight">
-            {profile.weightKg} <span className="text-sm font-medium text-zinc-500">kg</span>
+            {currentDay.weight ?? profile.weightKg} <span className="text-sm font-medium text-zinc-500">kg</span>
           </div>
           <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
         </div>
@@ -109,7 +116,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           </div>
           <div>
             <div className="text-xs font-semibold text-white">Number</div>
-            <div className="text-[10px] text-zinc-500 mt-0.5">Logged just now</div>
+            <div className="text-[10px] text-zinc-500 mt-0.5">Logged sessions</div>
           </div>
         </div>
 
@@ -123,7 +130,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
           </div>
           <div>
             <div className="text-xs font-semibold text-white">Measurement</div>
-            <div className="text-[10px] text-zinc-500 mt-0.5">Logged 1 min ago</div>
+            <div className="text-[10px] text-zinc-500 mt-0.5">Active time</div>
           </div>
         </div>
       </div>
@@ -134,7 +141,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
       <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex items-center justify-between">
         <div>
           <div className="text-sm font-semibold text-white">Energy Burn</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">Logged just now</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">Calisthenics & workout burn</div>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-3xl font-black text-[#22C55E] tracking-tight">
@@ -149,7 +156,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
          ───────────────────────────────────────────────────────────── */}
       <div className="bg-[#121815] border border-white/[0.05] rounded-2xl p-5 shadow-sm flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold text-white">Cardio 365</div>
+          <div className="text-sm font-semibold text-white">Training Day</div>
           <div className="text-[11px] text-zinc-500 mt-0.5">15+ min unlocks +10 pts</div>
         </div>
         <div className="flex items-center gap-3">
